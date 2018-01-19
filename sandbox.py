@@ -4,8 +4,8 @@ import compare
 import file
 
 compileHelper = {
-    ".c": "gcc -Wall -O3 %s -o %s",
-    ".cpp": "g++ -Wall -O3 %s -o %s"
+    ".c": ["gcc", "-Wall", "-O3", "%s", "-o", "%s"],
+    ".cpp": ["g++", "-Wall", "-O3", "%s", "-o", "%s"]
 }
 
 def writeResult(res, fee, reason, i):
@@ -18,7 +18,9 @@ def safe_judge(sourceFileName, sourceFileExt, directory, problemConfig):
     # WARNING: IT IS UNSAFE NOW!
     rsourceFileName = directory + sourceFileName
 
-    os.system(compileHelper[sourceFileExt] % (rsourceFileName + sourceFileExt, rsourceFileName))
+    # os.system(compileHelper[sourceFileExt] % (rsourceFileName + sourceFileExt, rsourceFileName))
+    compile = compileHelper[sourceFileExt.lower()]
+    cps = subprocess.run(compile[0], compile[1:], timeout=10) #FIXME
     proFiles = file.getProblemFiles(sourceFileName)
     tmpfile = "tmp.out"
     res = []

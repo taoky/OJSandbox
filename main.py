@@ -26,4 +26,4 @@ if __name__ == '__main__':
                 continue
             config = file.loadProblemConfig(filename)
             res = sandbox.safe_judge(filename, file_extension, relaPath, config)
-            print(res)
+            print(thisPlayer, res)

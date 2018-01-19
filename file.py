@@ -7,13 +7,13 @@ def removeHiddenFiles(li):
     return [i for i in li if not i.startswith('.')]
 
 def listOfPlayers():
-    return removeHiddenFiles(os.listdir("Players"))
+    return sorted(removeHiddenFiles(os.listdir("Players")))
 
 def listOfProblems():
-    return removeHiddenFiles(os.listdir("Problems"))
+    return sorted(removeHiddenFiles(os.listdir("Problems")))
 
 def listOfPlayerSources(playerName):
-    return removeHiddenFiles(os.listdir(getPlayerDirectory(playerName)))
+    return sorted(removeHiddenFiles(os.listdir(getPlayerDirectory(playerName))))
 
 def getProblemDirectory(problemName):
     return "Problems/" + problemName + "/"
