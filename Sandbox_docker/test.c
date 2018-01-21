@@ -1,13 +1,13 @@
 #include <stdio.h>
 
-char test[4] = {};
-
 int main(void) {
-	int i;
-	scanf("%d", &i);
-	for (int j = 0; j < 3; j++) {
-		test[j] = j;
+	int x[10] = {};
+	for (int i = 0; i < 10; i++) {
+		scanf("%d", &x[i]);
 	}
-	printf("Hello, world!\n");
+	for (int i = 9; i >= 0; i--) {
+		printf("%d ", x[i]);
+	}
+	printf("\nHello, world!\n");
 	return 0;
 }
