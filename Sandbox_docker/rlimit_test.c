@@ -83,10 +83,10 @@ void fileRedirect(char inputpath[], char outputpath[]) {
 	} */
 	FILE * input_file = fopen(inputpath, "r");
 	FILE * output_file = fopen(outputpath, "w");
-	if (dup2(fileno(input_file), fileno(stdin) == -1)) {
+	if (dup2(fileno(input_file), fileno(stdin)) == -1) {
 		errorExit(RDERR);
 	}
-	if (dup2(fileno(output_file), fileno(stdout) == -1)) {
+	if (dup2(fileno(output_file), fileno(stdout)) == -1) {
 		errorExit(RDERR);
 	}
 }
