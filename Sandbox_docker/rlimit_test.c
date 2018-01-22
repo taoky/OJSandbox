@@ -2,15 +2,27 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/resource.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/time.h>
 #include <stdbool.h>
+#include <pwd.h>
+#include <signal.h>
 
-#define NOBODY 65534
+// #define NOBODY 65534
+// Cannot assume that nobody's uid & gid are 65534.
 #define RLERR "rlimit error"
-#define NBERR "set gid & uid error"
+#define GIERR "set gid error"
+#define UIERR "set uid error"
 #define RDERR "file descriptor redirect error"
+#define FOERR "fork() error"
+#define SGERR "sigaction() error"
+
+pid_t son;
+bool killedByAlarm = false;
 
 bool isRootUser() {
-	return !getuid();
+	return !(geteuid() || getegid());
 }
 
 void errorExit(char str[]) {
@@ -20,10 +32,16 @@ void errorExit(char str[]) {
 
 void setNonPrivilegeUser() {
 	int status = 0;
-	status = setgid(NOBODY);
-	status = setuid(NOBODY);
+	struct passwd *nobody = getpwnam("nobody");
+	uid_t nobodyUID = nobody->pw_uid;
+	gid_t nobodyGID = nobody->pw_gid;
+	status = setgid(nobodyGID);
 	if (status == -1) {
-		errorExit(NBERR);
+		errorExit(GIERR);
+	}
+	status = setuid(nobodyUID);
+	if (status == -1) {
+		errorExit(UIERR);
 	}
 }
 
@@ -91,14 +109,55 @@ void fileRedirect(char inputpath[], char outputpath[]) {
 	}
 }
 
+void killChild() {
+	kill(son, SIGKILL);
+	killedByAlarm = true;
+}
+
 int main(int argc, char *argv[]) {
 	if (!isRootUser()) {
 		fprintf(stderr, "This program should be run only in root user!\n");
 		exit(-1);
 	}
-	fileRedirect("testinput", "testoutput");
-	setLimit(5, 1, 1, 5, 5);
-	setNonPrivilegeUser();
-	execv("test", argv);
+	son = fork();
+	if (son == -1) {
+		// fork failed
+		errorExit(FOERR);
+	}
+	if (son == 0) {
+		// child process
+		fileRedirect("testinput", "testoutput");
+		setLimit(10, 3, 1, 5, 10);
+		setNonPrivilegeUser();
+		execv("test", argv);
+	}
+	else {
+		// parent process
+		struct sigaction alarmKill;
+		int status;
+		alarmKill.sa_handler = killChild;
+		if (sigaction(SIGALRM, &alarmKill, NULL) == -1) {
+			errorExit(SGERR);
+		}
+		alarm(1);
+		while (1) {
+			waitpid(-1, &status, WUNTRACED | WNOHANG);
+			if (status) {
+				if (WIFEXITED(status)) {
+					puts("The program terminated.");
+					printf("Exit code: %d\n", WEXITSTATUS(status));
+				}
+				else if (WIFSIGNALED(status)) {
+					puts("The program was terminated by a signal.");
+					printf("Signal code: %d\n", WTERMSIG(status));
+				}
+				else if (WIFSTOPPED(status)) {
+					puts("The program was stopped by a signal. (WUNTRACED or being traced).");
+					printf("Signal code: %d\n", WSTOPSIG(status));
+				}
+				return 0;
+			}
+		}
+	}
 	return 0;
 }

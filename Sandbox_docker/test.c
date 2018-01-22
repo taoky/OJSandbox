@@ -9,5 +9,6 @@ int main(void) {
 		printf("%d ", x[i]);
 	}
 	printf("\nHello, world!\n");
+	while (1) {}
 	return 0;
 }
