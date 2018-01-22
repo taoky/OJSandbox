@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
-#include <sys/syscall.h>
+#include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -24,7 +24,7 @@
 #define TPERR "mkdtemp() error"
 #define FIERR "file error"
 #define FSERR "fstat() error"
-#define CPERR "copy_file_range() error"
+#define CPERR "sendfile() error"
 
 pid_t son;
 bool killedByAlarm = false;
@@ -166,6 +166,28 @@ void copyFile(char *from, char *to) {
 }
 */
 
+void copyFile(char *from, char *to) {
+	int fd_in, fd_out;
+	struct stat stat;
+	off_t offset = 0;
+	fd_in = open(from, O_RDONLY);
+	if (fd_in == -1) {
+		errorExit(FIERR);
+	}
+	if (fstat(fd_in, &stat) == -1) {
+		errorExit(FSERR);
+	}
+	fd_out = open(to, O_CREAT | O_WRONLY, stat.st_mode);
+	if (fd_out == -1) {
+		errorExit(FIERR);
+	}
+	if (sendfile(fd_out, fd_in, &offset, stat.st_size) == -1) {
+		errorExit(CPERR);
+	}
+	close(fd_in);
+	close(fd_out);
+}
+
 void initTmp(char *progName) {
 	char *tmp = mkdtemp(tmpDir);
 	if (tmp == NULL) {
@@ -180,10 +202,12 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "This program should be run only in root user!\n");
 		exit(-1);
 	}
-	copyFile("test", "/tmp/test");
-	int timeLimit = 1; // s
-	int memoryLimit = 10; // MB
+	// copyFile("test", "/tmp/test");
+	int timeLimit = 2; // s
+	int memoryLimit = 128; // MB
 	char progName[] = "test";
+
+	//initTmp(progName);
 
 	son = fork();
 	if (son == -1) {
@@ -193,7 +217,7 @@ int main(int argc, char *argv[]) {
 	if (son == 0) {
 		// child process
 		fileRedirect("testinput", "testoutput");
-		setLimit(memoryLimit, 3, timeLimit, 5, memoryLimit);
+		setLimit(memoryLimit, timeLimit, 10, 5, memoryLimit);
 		setNonPrivilegeUser();
 		execv(progName, argv);
 		errorExit(EXERR); // unreachable normally
@@ -209,8 +233,9 @@ int main(int argc, char *argv[]) {
 		}
 		alarm(timeLimit);
 		while (1) {
-			waitpid(-1, &status, WUNTRACED | WNOHANG);
-			if (status) {
+			int res = waitpid(-1, &status, WUNTRACED | WNOHANG);
+			if (res) {
+				printf("%d, %d\n", status, res);
 				if (WIFEXITED(status)) {
 					puts("The program terminated.");
 					printf("Exit code: %d\n", WEXITSTATUS(status));
