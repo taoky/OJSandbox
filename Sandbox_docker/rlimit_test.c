@@ -5,6 +5,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/syscall.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <pwd.h>
 #include <signal.h>
@@ -17,9 +20,15 @@
 #define RDERR "file descriptor redirect error"
 #define FOERR "fork() error"
 #define SGERR "sigaction() error"
+#define EXERR "exec error"
+#define TPERR "mkdtemp() error"
+#define FIERR "file error"
+#define FSERR "fstat() error"
+#define CPERR "copy_file_range() error"
 
 pid_t son;
 bool killedByAlarm = false;
+char tmpDir[] = "/tmp/OJSandbox-XXXXXX";
 
 bool isRootUser() {
 	return !(geteuid() || getegid());
@@ -114,11 +123,68 @@ void killChild() {
 	killedByAlarm = true;
 }
 
+/*
+ * The COW copy is not suitable here, because it won't work if files are not on the same mounted filesystem.
+
+static loff_t copy_file_range(int fd_in, loff_t *off_in, int fd_out,
+                       loff_t *off_out, size_t len, unsigned int flags)
+{
+	// the implementation of copy_file_range()
+	// reference: the manpage of copy_file_range
+	return syscall(__NR_copy_file_range, fd_in, off_in, fd_out, 
+			off_out, len, flags);
+}
+
+
+void copyFile(char *from, char *to) {
+	// require Linux 4.5+, COW (Copy On Write)
+	// reference: the manpage of copy_file_range
+	int fd_in = open(from, O_RDONLY), fd_out;
+	struct stat stat;
+	loff_t len, ret;
+	if (fd_in == -1) {
+		errorExit(FIERR);
+	}
+	if (fstat(fd_in, &stat) == -1) {
+		errorExit(FSERR);
+	}
+	len = stat.st_size;
+	fd_out = open(to, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+	if (fd_out == -1) {
+		errorExit(FIERR);
+	}
+	do {
+		ret = copy_file_range(fd_in, NULL, fd_out, NULL, len, 0);
+		if (ret == -1) {
+			errorExit(CPERR);
+		}
+		len -= ret;
+	} while (len > 0);
+
+	close(fd_in);
+	close(fd_out);
+}
+*/
+
+void initTmp(char *progName) {
+	char *tmp = mkdtemp(tmpDir);
+	if (tmp == NULL) {
+		errorExit(TPERR);
+	}
+	
+
+}
+
 int main(int argc, char *argv[]) {
 	if (!isRootUser()) {
 		fprintf(stderr, "This program should be run only in root user!\n");
 		exit(-1);
 	}
+	copyFile("test", "/tmp/test");
+	int timeLimit = 1; // s
+	int memoryLimit = 10; // MB
+	char progName[] = "test";
+
 	son = fork();
 	if (son == -1) {
 		// fork failed
@@ -127,19 +193,21 @@ int main(int argc, char *argv[]) {
 	if (son == 0) {
 		// child process
 		fileRedirect("testinput", "testoutput");
-		setLimit(10, 3, 1, 5, 10);
+		setLimit(memoryLimit, 3, timeLimit, 5, memoryLimit);
 		setNonPrivilegeUser();
-		execv("test", argv);
+		execv(progName, argv);
+		errorExit(EXERR); // unreachable normally
 	}
 	else {
 		// parent process
 		struct sigaction alarmKill;
+		struct rusage sonUsage; // TODO
 		int status;
 		alarmKill.sa_handler = killChild;
 		if (sigaction(SIGALRM, &alarmKill, NULL) == -1) {
 			errorExit(SGERR);
 		}
-		alarm(1);
+		alarm(timeLimit);
 		while (1) {
 			waitpid(-1, &status, WUNTRACED | WNOHANG);
 			if (status) {
