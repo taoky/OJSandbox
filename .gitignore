@@ -104,6 +104,13 @@ venv.bak/
 .mypy_cache/
 
 .DS_Store
-.idea
+.DS_Store?
+.Spotlight-V100
+.Trashes
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-v][a-z]
+[._]sw[a-p]
+Session.vim
+.netrwhist
 *~
-.swp
