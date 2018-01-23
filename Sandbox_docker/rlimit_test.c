@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <pwd.h>
 #include <signal.h>
+#include <string.h>
 
 // #define NOBODY 65534
 // Cannot assume that nobody's uid & gid are 65534.
@@ -25,10 +26,14 @@
 #define FIERR "file error"
 #define FSERR "fstat() error"
 #define CPERR "sendfile() error"
+#define NBERR "nobody's gid or uid error"
 
 pid_t son;
 bool killedByAlarm = false;
 char tmpDir[] = "/tmp/OJSandbox-XXXXXX";
+uid_t nobodyUID;
+gid_t nobodyGID;
+char *execFile;
 
 bool isRootUser() {
 	return !(geteuid() || getegid());
@@ -39,11 +44,17 @@ void errorExit(char str[]) {
 	exit(-1);
 }
 
+void init() {
+	struct passwd *nobody = getpwnam("nobody");
+	nobodyUID = nobody->pw_uid;
+	nobodyGID = nobody->pw_gid;
+	if (!nobodyUID || !nobodyGID) {
+		errorExit(NBERR);
+	}
+}
+
 void setNonPrivilegeUser() {
 	int status = 0;
-	struct passwd *nobody = getpwnam("nobody");
-	uid_t nobodyUID = nobody->pw_uid;
-	gid_t nobodyGID = nobody->pw_gid;
 	status = setgid(nobodyGID);
 	if (status == -1) {
 		errorExit(GIERR);
@@ -119,7 +130,13 @@ void fileRedirect(char inputpath[], char outputpath[]) {
 }
 
 void killChild() {
-	kill(son, SIGKILL);
+	int res = kill(son, SIGKILL);
+	if (res == -1 && errno == ESRCH) {
+		fprintf(stderr, "Cannot find child process. Maybe it has exited.\n");
+	}
+	else if (res == -1) {
+		fprintf(stderr, "Failed to kill child.\n");
+	}
 	killedByAlarm = true;
 }
 
@@ -188,13 +205,29 @@ void copyFile(char *from, char *to) {
 	close(fd_out);
 }
 
+char *pathCat(char *path, char *fileName) {
+	/*
+	 * dynamic alloc memory
+	 * need to be freed
+	 */
+	int plen = strlen(path), flen = strlen(fileName);
+	char *res = malloc(plen + flen);
+	strcpy(res, path);
+	res[plen] = '/';
+	strcpy(res + plen + 1, fileName);
+	return res;
+}
+
 void initTmp(char *progName) {
 	char *tmp = mkdtemp(tmpDir);
 	if (tmp == NULL) {
 		errorExit(TPERR);
 	}
-	
-
+	chown(tmp, nobodyUID, nobodyGID);
+	execFile = pathCat(tmp, progName);
+	copyFile(progName, execFile);
+	chown(execFile, nobodyUID, nobodyGID);
+	chmod(execFile, S_IRUSR | S_IWUSR | S_IXUSR);
 }
 
 int main(int argc, char *argv[]) {
@@ -202,12 +235,13 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "This program should be run only in root user!\n");
 		exit(-1);
 	}
-	// copyFile("test", "/tmp/test");
+	init();
+
 	int timeLimit = 2; // s
 	int memoryLimit = 128; // MB
 	char progName[] = "test";
 
-	//initTmp(progName);
+	initTmp(progName);
 
 	son = fork();
 	if (son == -1) {
@@ -219,7 +253,7 @@ int main(int argc, char *argv[]) {
 		fileRedirect("testinput", "testoutput");
 		setLimit(memoryLimit, timeLimit, 10, 5, memoryLimit);
 		setNonPrivilegeUser();
-		execv(progName, argv);
+		execv(execFile, argv);
 		errorExit(EXERR); // unreachable normally
 	}
 	else {
@@ -234,6 +268,7 @@ int main(int argc, char *argv[]) {
 		alarm(timeLimit);
 		while (1) {
 			int res = waitpid(-1, &status, WUNTRACED | WNOHANG);
+			getrusage(RUSAGE_CHILDREN, &sonUsage);
 			if (res) {
 				printf("%d, %d\n", status, res);
 				if (WIFEXITED(status)) {
