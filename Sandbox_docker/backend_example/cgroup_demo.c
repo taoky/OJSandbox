@@ -13,9 +13,8 @@ rlim_t maxCPUTime = 2;
 rlim_t maxProcessNum = 1;
 rlim_t maxFileSize = 5 * (1 << 20);
 
-char *cpu_cgroup = "/sys/fs/cgroup/cpuacct/ojs"
-char *mem_cgroup = "/sys/fs/cgroup/memory/ojs"
-char *pid_cgroup = "/sys/fs/cgroup/pids/ojs"
+char *cpu_cgroup = "/sys/fs/cgroup/cpuacct/ojs"; // get cpu time
+char *mem_cgroup = "/sys/fs/cgroup/memory/ojs"; // limit memory & get memory usage
 
 bool isRootUser() {
 	return !(geteuid() || getegid());
@@ -39,7 +38,6 @@ int main(int argc, char **argv) {
 		// child
 		mkdir(cpu_cgroup, 0755);
 		mkdir(mem_cgroup, 0755);
-		mkdir(pid_cgroup, 0755);
 		//TODO
 		char *cargv[] = {argv[1], NULL};
 		char *cenv[] = {NULL};
@@ -51,7 +49,6 @@ int main(int argc, char **argv) {
 		wait(NULL);
 		rmdir(cpu_cgroup);
 		rmdir(mem_cgroup);
-		rmdir(pid_cgroup);
 	}
 	return 0;
 }

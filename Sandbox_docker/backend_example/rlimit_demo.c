@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 		if (setrlimit(RLIMIT_CORE, &nocore) != 0) {
 			perror("rlimit error");
 		}
-		char *cargv[] = {argv[1], NULL};
+		char *cargv[] = {NULL};
 		char *cenv[] = {NULL};
 		execve(argv[1], cargv, cenv);
 		perror("exec error");
