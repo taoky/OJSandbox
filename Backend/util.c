@@ -35,12 +35,13 @@ void copyFile(char *from, char *to) {
 }
 
 void initNobody(void) {
-    struct passwd *nobody = getpwnam("nobody");
-	nobodyUID = nobody->pw_uid;
-	nobodyGID = nobody->pw_gid;
-	if (!nobodyUID || !nobodyGID) {
-		errorExit(NBERR);
-	}
+    // struct passwd *nobody = getpwnam("nobody");
+	// nobodyUID = nobody->pw_uid;
+	// nobodyGID = nobody->pw_gid;
+	// if (!nobodyUID || !nobodyGID) {
+	// 	errorExit(NBERR);
+	// }
+	nobodyUID = nobodyGID = 65534;
 }
 
 void setNonPrivilegeUser(void) {
@@ -136,6 +137,24 @@ int writeFileInt(char *path, int value, bool isOverWrite) {
 	fprintf(f, "%d\n", value);
 	fclose(f);
 	return value;
+}
+
+bool writeFileStr(char *path, char *value, bool isOverWrite) {
+	FILE *f;
+	if (isOverWrite) {
+		f = fopen(path, "w");
+	}
+	else {
+		f = fopen(path, "a");
+	}
+	if (!f) {
+		fprintf(stderr, "%s error\n", path);
+		perror("unable to open file");
+		return false;
+	}
+	fprintf(f, "%s\n", value);
+	fclose(f);
+	return true;
 }
 
 bool clearFile(char *path) {

@@ -14,6 +14,7 @@ void cleanup() {
     system("umount /tmp/ojs-*/*");
     system("umount /tmp/ojs-*/dev/*");
     system("umount /tmp/ojs-*/usr/*");
+    system("umount /tmp/ojs-*/etc/*");
     system("rm -rf /tmp/ojs-*");
     exit(0);
 }
@@ -54,16 +55,21 @@ int main(int argc, char **argv) {
     mount("tmp", "tmp", "tmpfs", MS_NOSUID, "size=16m,nr_inodes=4k");
 
     mkdir("bin", MODE0);
+    mkdir("etc", MODE0);
+    mkdir("etc/alternatives", MODE0); // java 
     mkdir("lib", MODE0);
     mkdir("lib64", MODE0);
     mkdir("usr", MODE0);
     mkdir("usr/bin", MODE0);
     mkdir("usr/include", MODE0);
     mkdir("usr/lib", MODE0);
-    mkdir("usr/lib64", MODE0);
-    mkdir("usr/libexec", MODE0);
+    // mkdir("usr/lib64", MODE0);
+    // mkdir("usr/libexec", MODE0);
     mkdir("usr/share", MODE0);
+
+    writeFileStr("etc/passwd", "nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin", true);
     bindMountHelper("/bin", "bin");
+    bindMountHelper("/etc/alternatives", "etc/alternatives");
     bindMountHelper("/lib", "lib");
     bindMountHelper("/lib64", "lib64");
     bindMountHelper("/usr/bin", "usr/bin");

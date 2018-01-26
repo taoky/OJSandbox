@@ -46,5 +46,6 @@ int writeFileInt(char *path, int value, bool isOverWrite);
 bool clearFile(char *path);
 int timevalms(const struct timeval *timev);
 void setrlimStruct(rlim_t num, struct rlimit * st);
+bool writeFileStr(char *path, char *value, bool isOverWrite);
 
 #endif
