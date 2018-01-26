@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/sendfile.h>
 #include <sys/mount.h>
 #include <fcntl.h>
@@ -39,5 +41,10 @@ char *pathCat(char *path, char *fileName);
 bool isPathLink(char *path);
 bool isPathDir(char *path);
 void bindMountHelper(char *from, char *to);
+long long readFileLL(char *path);
+int writeFileInt(char *path, int value, bool isOverWrite);
+bool clearFile(char *path);
+int timevalms(const struct timeval *timev);
+void setrlimStruct(rlim_t num, struct rlimit * st);
 
 #endif

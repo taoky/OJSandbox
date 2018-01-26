@@ -1,7 +1,7 @@
 #include "util.h"
 
-uid_t nobodyUID;
-gid_t nobodyGID;
+uid_t nobodyUID = 0;
+gid_t nobodyGID = 0;
 
 bool isRootUser(void) {
 	return !(geteuid() || getegid());
@@ -45,6 +45,9 @@ void initNobody(void) {
 
 void setNonPrivilegeUser(void) {
 	int status = 0;
+	if (nobodyGID == 0 || nobodyUID == 0) {
+		initNobody();
+	}
 	status = setgid(nobodyGID);
 	if (status == -1) {
 		errorExit(GIERR);
@@ -102,4 +105,54 @@ void bindMountHelper(char *from, char *to) {
     else {
         printf("%s %s WTF?\n", from, to);
     }
+}
+
+long long readFileLL(char *path) {
+	long long res;
+	FILE *f = fopen(path, "r");
+	if (!f) {
+		fprintf(stderr, "%s error\n", path);
+		perror("unable to open file");
+		return -1;
+	}
+	fscanf(f, "%lld", &res);
+	fclose(f);
+	return res;
+}
+
+int writeFileInt(char *path, int value, bool isOverWrite) {
+	FILE *f;
+	if (isOverWrite) {
+		f = fopen(path, "w");
+	}
+	else {
+		f = fopen(path, "a");
+	}
+	if (!f) {
+		fprintf(stderr, "%s error\n", path);
+		perror("unable to open file");
+		return -1;
+	}
+	fprintf(f, "%d\n", value);
+	fclose(f);
+	return value;
+}
+
+bool clearFile(char *path) {
+	FILE *f = fopen(path, "w");
+	if (!f) {
+		fprintf(stderr, "%s error\n", path);
+		perror("unable to open file");
+		return false;
+	}
+	fclose(f);
+	return true;
+}
+
+int timevalms(const struct timeval *timev) {
+	return timev->tv_sec * 1000 + timev->tv_usec;
+}
+
+void setrlimStruct(rlim_t num, struct rlimit * st) {
+	st->rlim_cur = st->rlim_max = num;
 }

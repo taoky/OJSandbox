@@ -72,4 +72,6 @@ int main(int argc, char **argv) {
     // bindMountHelper("/usr/lib64", "usr/lib64");
     // bindMountHelper("/usr/libexec", "usr/libexec");
     bindMountHelper("/usr/share", "usr/share");
+    printf("The tmp dir: %s\n", tmp);
+    return 0;
 }
