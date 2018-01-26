@@ -24,6 +24,7 @@ def getPlayerDirectory(playerName):
 def loadProblemConfig(problemName):
     with open(getProblemDirectory(problemName) + "config.json", "r") as f:
         config = json.loads(f.read())
+        f.close()
     return config
 
 def getProblemFiles(problemName):
