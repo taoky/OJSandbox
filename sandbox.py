@@ -2,7 +2,7 @@ import os
 import subprocess
 import compare
 import file
-from judge_errors import JudgeError
+from judgeResult import JudgeResult, JudgeError
 
 compileHelper = {
     # '%i' for input file, '%o' for output file
@@ -16,7 +16,7 @@ def writeResult(res, fee, reason, i):
         fee = reason
     return fee
 
-def judge_process(sourceFileName, sourceFileExt, directory, problemConfig):
+def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     # WARNING: IT IS UNSAFE NOW!
     rsourceFileName = directory + sourceFileName
     rsourceCodeName = rsourceFileName + sourceFileExt
@@ -26,10 +26,10 @@ def judge_process(sourceFileName, sourceFileExt, directory, problemConfig):
         compileCommand = compileHelper[sourceFileExt.lower()]
         compile = [{'%i': rsourceCodeName, '%o': rsourceFileName}.get(i, i) for i in compileCommand]
     except KeyError as e:
-        raise JudgeError("File type not supported", [])
+        raise JudgeError(JudgeResult.FTE, [])
     cps = subprocess.run(compile, bufsize=0, timeout=10)
     if cps.returncode != 0:
-        raise JudgeError("Compilation Error", [])
+        raise JudgeError(JudgeResult.CE, [])
     proFiles = file.getProblemFiles(sourceFileName)
     tmpfile = "tmp.out"
     res = []
@@ -44,20 +44,20 @@ def judge_process(sourceFileName, sourceFileExt, directory, problemConfig):
         cp = compare.lineCompare(tmpfile, file.getProblemDirectory(sourceFileName) + i[1])
         os.remove(tmpfile) # cleanup
         if sp.returncode != 0:
-            firstEncounterError = writeResult(res, firstEncounterError, ("Runtime Error"), proFileName)
+            firstEncounterError = writeResult(res, firstEncounterError, (JudgeResult.RE), proFileName)
         elif cp == False:
-            firstEncounterError = writeResult(res, firstEncounterError, ("Wrong Answer"), proFileName)
+            firstEncounterError = writeResult(res, firstEncounterError, (JudgeResult.WA), proFileName)
         else:
-            firstEncounterError = writeResult(res, firstEncounterError, ("Accepted"), proFileName)
+            firstEncounterError = writeResult(res, firstEncounterError, (JudgeResult.AC), proFileName)
 
     if firstEncounterError is None:
-        firstEncounterError = "Accepted"
+        firstEncounterError = JudgeResult.WA
     os.remove(rsourceFileName) # remove the compiler file
-    return (firstEncounterError, res)
+    return JudgeResult(firstEncounterError, res)
 
-def safe_judge(sourceFileName, sourceFileExt, directory, problemConfig):
+def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
     try:
         # Forward everything
-        return judge_process(sourceFileName, sourceFileExt, directory, problemConfig)
+        return judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig)
     except JudgeError as e:
-        return (e.value, e.info)
+        return e
