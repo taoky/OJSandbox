@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
     if (tmp == NULL) {
         errorExit(TPERR);
     }
+    chmod(tmp, MODE0); // fix user permission error
     // reference: jd4
     chdir(tmp);
     mkdir("proc", MODE0);

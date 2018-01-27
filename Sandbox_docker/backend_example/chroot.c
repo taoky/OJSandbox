@@ -94,6 +94,8 @@ int main(int argc, char **argv) {
 			perror("chdir error");
 			exit(-1);
 		}
+		setuid(65534);
+		setgid(65534);
 		char *cargv[] = {NULL};
 		char *cenv[] = {NULL};
 		execve(argv[1], cargv, cenv); // static link only
