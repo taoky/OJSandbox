@@ -28,6 +28,7 @@
 #define CPERR "sendfile() error"
 #define NBERR "nobody's gid or uid error"
 #define CGERR "cgroup error"
+#define SCERR "seccomp error"
 
 extern uid_t nobodyUID;
 extern gid_t nobodyGID;

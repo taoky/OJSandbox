@@ -1,6 +1,7 @@
 #include "main.h"
 #include "util.h"
 #include "init.h"
+#include "secrules.h"
 
 pid_t son;
 static int son_exec = 0;
@@ -147,7 +148,9 @@ int main(int argc, char **argv)
         chdir("/");
         // 5. set uid & gid to nobody
         setNonPrivilegeUser();
-        // 6. exec
+        // 6. load seccomp rule
+        nativeProgRules(exec_prog);
+        // 7. exec
         char *f_argv[] = {NULL}, *f_envp[] = {NULL};
         while (!son_exec)
             ;
