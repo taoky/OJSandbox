@@ -2,13 +2,8 @@ import os
 import subprocess
 import compare
 import file
+import langSupport
 from judgeResult import JudgeResult, JudgeError
-
-compileHelper = {
-    # '%i' for input file, '%o' for output file
-    ".c": ["gcc", "-Wall", "-O3", "%i", "-o", "%o"],
-    ".cpp": ["g++", "-Wall", "-O3", "%i", "-o", "%o"]
-}
 
 def writeResult(res, fee, reason, i):
     res.append((i, reason))
@@ -16,15 +11,15 @@ def writeResult(res, fee, reason, i):
         fee = reason
     return fee
 
-def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
+def judgeProcessC(sourceFileName, sourceFileExt, directory, problemConfig):
     # WARNING: IT IS UNSAFE NOW!
     rsourceFileName = directory + sourceFileName
     rsourceCodeName = rsourceFileName + sourceFileExt
     
     # os.system(compileHelper[sourceFileExt] % (rsourceCodeName, rsourceFileName))
     try:
-        compileCommand = compileHelper[sourceFileExt.lower()]
-        compile = [{'%i': rsourceCodeName, '%o': rsourceFileName}.get(i, i) for i in compileCommand]
+        compileHelper = langSupport.compileHelper[sourceFileExt.lower()]
+        compile = langSupport.formatHelper(compileHelper, infile=rsourceCodeName, outfile=rsourceFileName)
     except KeyError as e:
         raise JudgeError(JudgeResult.FTE, [])
     cps = subprocess.run(compile, bufsize=0, timeout=10)
@@ -69,7 +64,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
 def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
     try:
         # Forward everything
-        return judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig)
+        return judgeProcessC(sourceFileName, sourceFileExt, directory, problemConfig)
     except JudgeError as e:
         # Cleanup
         keys = ['exe', 'out']

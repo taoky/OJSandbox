@@ -1,6 +1,7 @@
 // File: 101.c
 // Memory limit exceeded (1.5GiB)
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
