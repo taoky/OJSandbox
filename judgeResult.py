@@ -35,7 +35,7 @@ class JudgeResult:
     def stringBase(res):
         return JudgeResult.INFO.get(res, "Unknown result")
 
-    def __init__(self, value, res):
+    def __init__(self, value, res = None):
         self.value = value
         self.res = res
 
@@ -44,9 +44,9 @@ class JudgeResult:
 
 
 class JudgeError(Exception, JudgeResult):
-    def __init__(self, value, info = None):
+    def __init__(self, value, res = None):
         self.value = value
-        self.info = info
+        self.res = res
     
     def __str__(self):
-        return repr(JudgeResult.stringBase(self.value))
+        return JudgeResult.stringBase(self.value)

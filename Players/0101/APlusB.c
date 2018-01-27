@@ -7,15 +7,17 @@
 typedef unsigned char byte;
 
 // Use junk to prevent compiler optimization
-byte junk;
+unsigned junk;
 
 int main(){
 	byte *p;
 	int i;
 	for (i = 0; i < 384 * 1024; i++){
 		p = malloc(4096);
-		junk = p[0];
+		memcpy(p, &junk, sizeof junk);
+		junk += p[0];
 	}
+	printf("%u\n", junk);
 	return 0;
 }
 

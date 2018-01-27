@@ -4,8 +4,11 @@ import sys
 import filecmp
 
 def trim(l):
-    while l[-1] == '':
-        l.pop()
+    try:
+        while l[-1] == '':
+            l.pop()
+    except:
+        return []
     return l
 
 def lineCompare(file1, file2):

@@ -38,9 +38,20 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
         input = open(file.getProblemDirectory(sourceFileName) + i[0])
         output = open(tmpfile, "w")
         proFileName = os.path.splitext(i[0])[0]
-        sp = subprocess.run(rsourceFileName, stdin=input, stdout=output, timeout=problemConfig["timeout"] / 1000.0)
-        input.close()
-        output.close()
+        try:
+            sp = subprocess.run(rsourceFileName, stdin=input, stdout=output, timeout=problemConfig["timeout"] / 1000.0)
+        except subprocess.TimeoutExpired:
+            res = {'exe': rsourceFileName,
+                   'out': tmpfile}
+            raise JudgeError(JudgeError.TLE, res)
+        finally:
+            input.close()
+            output.close()
+
+        if sp.returncode != 0:
+            res = {'exe': rsourceFileName,
+                   'out': tmpfile}
+            raise JudgeError(JudgeError.RE, res)
         cp = compare.lineCompare(tmpfile, file.getProblemDirectory(sourceFileName) + i[1])
         os.remove(tmpfile) # cleanup
         if sp.returncode != 0:
@@ -60,4 +71,11 @@ def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
         # Forward everything
         return judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig)
     except JudgeError as e:
+        # Cleanup
+        keys = ['exe', 'out']
+        for i in keys:
+            try:
+                os.remove(e.res[i])
+            except KeyError:
+                pass
         return e
