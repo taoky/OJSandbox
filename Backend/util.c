@@ -99,8 +99,8 @@ void bindMountHelper(char *from, char *to) {
         printf("%s %s symlink %d\n", from, to, res);
     }
     else if (isPathDir(from)) {
-        mount(from, to, "", MS_BIND | MS_NOSUID, NULL);
-        mount(from, to, "", MS_BIND | MS_NOSUID | MS_REMOUNT | MS_RDONLY, NULL);
+        res = mount(from, to, "", MS_BIND | MS_NOSUID, NULL);
+        res = mount(from, to, "", MS_BIND | MS_NOSUID | MS_REMOUNT | MS_RDONLY, NULL);
         printf("%s %s mount %d\n", from, to, res);
     }
     else {
