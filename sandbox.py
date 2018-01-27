@@ -41,7 +41,7 @@ def judge_process(sourceFileName, sourceFileExt, directory, problemConfig):
         sp = subprocess.run(rsourceFileName, stdin=input, stdout=output, timeout=problemConfig["timeout"] / 1000.0)
         input.close()
         output.close()
-        cp = compare.strictCompare(tmpfile, file.getProblemDirectory(sourceFileName) + i[1])
+        cp = compare.lineCompare(tmpfile, file.getProblemDirectory(sourceFileName) + i[1])
         os.remove(tmpfile) # cleanup
         if sp.returncode != 0:
             firstEncounterError = writeResult(res, firstEncounterError, ("Runtime Error"), proFileName)
