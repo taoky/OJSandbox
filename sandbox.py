@@ -2,29 +2,38 @@ import os
 import subprocess
 import compare
 import file
+from judge_errors import JudgeError
 
 compileHelper = {
-    ".c": ["gcc", "-Wall", "-O3", "%s", "-o", "%s"],
-    ".cpp": ["g++", "-Wall", "-O3", "%s", "-o", "%s"]
+    # '%i' for input file, '%o' for output file
+    ".c": ["gcc", "-Wall", "-O3", "%i", "-o", "%o"],
+    ".cpp": ["g++", "-Wall", "-O3", "%i", "-o", "%o"]
 }
 
 def writeResult(res, fee, reason, i):
     res.append((i, reason))
-    if fee == False:
+    if fee is None:
         fee = reason
     return fee
 
-def safe_judge(sourceFileName, sourceFileExt, directory, problemConfig):
+def judge_process(sourceFileName, sourceFileExt, directory, problemConfig):
     # WARNING: IT IS UNSAFE NOW!
     rsourceFileName = directory + sourceFileName
-
-    # os.system(compileHelper[sourceFileExt] % (rsourceFileName + sourceFileExt, rsourceFileName))
-    compile = compileHelper[sourceFileExt.lower()]
-    cps = subprocess.run(compile[0], compile[1:], timeout=10) #FIXME
+    rsourceCodeName = rsourceFileName + sourceFileExt
+    
+    # os.system(compileHelper[sourceFileExt] % (rsourceCodeName, rsourceFileName))
+    try:
+        compileCommand = compileHelper[sourceFileExt.lower()]
+        compile = [{'%i': rsourceCodeName, '%o': rsourceFileName}.get(i, i) for i in compileCommand]
+    except KeyError as e:
+        raise JudgeError("File type not supported", [])
+    cps = subprocess.run(compile, bufsize=0, timeout=10)
+    if cps.returncode != 0:
+        raise JudgeError("Compilation Error", [])
     proFiles = file.getProblemFiles(sourceFileName)
     tmpfile = "tmp.out"
     res = []
-    firstEncounterError = False
+    firstEncounterError = None
     for i in proFiles:
         input = open(file.getProblemDirectory(sourceFileName) + i[0])
         output = open(tmpfile, "w")
@@ -41,7 +50,14 @@ def safe_judge(sourceFileName, sourceFileExt, directory, problemConfig):
         else:
             firstEncounterError = writeResult(res, firstEncounterError, ("Accepted"), proFileName)
 
-    if firstEncounterError == False:
+    if firstEncounterError is None:
         firstEncounterError = "Accepted"
     os.remove(rsourceFileName) # remove the compiler file
     return (firstEncounterError, res)
+
+def safe_judge(sourceFileName, sourceFileExt, directory, problemConfig):
+    try:
+        # Forward everything
+        return judge_process(sourceFileName, sourceFileExt, directory, problemConfig)
+    except JudgeError as e:
+        return (e.value, e.info)
