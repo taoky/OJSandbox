@@ -7,7 +7,8 @@ static int trusted_syscalls[] = {
     SCMP_SYS(write), SCMP_SYS(exit_group), SCMP_SYS(mmap),
     SCMP_SYS(close), SCMP_SYS(mprotect), SCMP_SYS(munmap),
     SCMP_SYS(read), SCMP_SYS(lseek), // SCMP_SYS(open),
-    SCMP_SYS(stat)};
+    SCMP_SYS(stat)
+};
 
 void nativeProgRules(char *progExec)
 {
@@ -43,4 +44,6 @@ void nativeProgRules(char *progExec)
 
 void runnerRules(char *progExec)
 {
+    // whitelist
+    
 }
