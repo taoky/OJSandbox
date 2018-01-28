@@ -19,38 +19,41 @@ def judgeProcessC(sourceFileName, sourceFileExt, directory, problemConfig):
     # os.system(compileHelper[sourceFileExt] % (rsourceCodeName, rsourceFileName))
     try:
         compileHelper = langSupport.compileHelper[sourceFileExt.lower()]
-        compile = langSupport.formatHelper(compileHelper, infile=rsourceCodeName, outfile=rsourceFileName)
+        compiling = langSupport.formatHelper(compileHelper, infile=rsourceCodeName, outfile=rsourceFileName)
     except KeyError as e:
         raise JudgeError(JudgeResult.FTE, [])
-    cps = subprocess.run(compile, bufsize=0, timeout=10)
+    
+    cps = subprocess.run(compiling, bufsize=0, timeout=10)
     if cps.returncode != 0:
         raise JudgeError(JudgeResult.CE, [])
     proFiles = file.getProblemFiles(sourceFileName)
-    tmpfile = "tmp.out"
+    outfile = file.outFileName
     res = []
     firstEncounterError = None
     for i in proFiles:
-        input = open(file.getProblemDirectory(sourceFileName) + i[0])
-        output = open(tmpfile, "w")
+        istream = open(file.getProblemDirectory(sourceFileName) + i[0])
+        ostream = open(outfile, "w")
         proFileName = os.path.splitext(i[0])[0]
         runHelper = langSupport.executeHelper[sourceFileExt.lower()]
-        runCommand = langSupport.formatHelper(runHelper, exefile=rsourceFileName)
+        running = langSupport.formatHelper(runHelper, exefile=rsourceFileName)
         try:
-            sp = subprocess.run(runCommand, stdin=input, stdout=output, timeout=problemConfig["timeout"] / 1000.0)
+            sp = subprocess.run(running, stdin=istream, stdout=ostream, timeout=problemConfig["timeout"] / 1000.0)
         except subprocess.TimeoutExpired:
             res = {'exe': rsourceFileName,
-                   'out': tmpfile}
+                   'out': outfile}
             raise JudgeError(JudgeError.TLE, res)
         finally:
-            input.close()
-            output.close()
+            istream.close()
+            ostream.close()
 
         if sp.returncode != 0:
             res = {'exe': rsourceFileName,
-                   'out': tmpfile}
+                   'out': outfile}
             raise JudgeError(JudgeError.RE, res)
-        cp = compare.lineCompare(tmpfile, file.getProblemDirectory(sourceFileName) + i[1])
-        os.remove(tmpfile) # cleanup
+
+        compareMethod = compare.getCompareMethod(problemConfig["compare"])
+        cp = compareMethod(outfile, file.getProblemDirectory(sourceFileName) + i[1])
+        os.remove(outfile) # cleanup
         if sp.returncode != 0:
             firstEncounterError = writeResult(res, firstEncounterError, (JudgeResult.RE), proFileName)
         elif cp == False:

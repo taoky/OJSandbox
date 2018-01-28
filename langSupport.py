@@ -1,7 +1,9 @@
 COMPILED = 1
 INTERPRETED = 2
+MIXED = 3
 UNKNOWN = 0
 
+# Just leave the classfication here in case they're needed later
 langs = {
     '.c': COMPILED,
     '.cpp': COMPILED,
@@ -13,10 +15,10 @@ langs = {
 # '%e' is executable
 
 compileHelper = {
-    '.c': ["gcc", "-Wall", "-O3", "%i", "-o", "%o"],
-    '.cpp': ["g++", "-Wall", "-O3", "%i", "-o", "%o"],
+    '.c': ['gcc', '-Wall', '-O3', '%i', '-o', '%o'],
+    '.cpp': ['g++', '-Wall', '-O3', '%i', '-o', '%o'],
     '.py': ['cp', '%i', '%o'],
-    '.java': ["javac", "%i"]
+    '.java': ['javac', '%i', '-o', '%o']
 }
 
 executeHelper = {

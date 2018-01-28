@@ -20,16 +20,16 @@ class JudgeResult:
     UNKNOWN = 999
 
     INFO = {
-            AC: "Accepted",
-            WA: "Wrong Answer",
-            RE: "Runtime error",
-            MLE: "Memory limit exceeded",
-            TLE: "Time limit exceeded",
-            CE: "Compile error",
-            FTE: "Invalid file type",
-            IE: "Internal error",
-            UNKNOWN: "Unknown error"
-           }
+        AC: "Accepted",
+        WA: "Wrong answer",
+        RE: "Runtime error",
+        MLE: "Memory limit exceeded",
+        TLE: "Time limit exceeded",
+        CE: "Compile error",
+        FTE: "Invalid file type",
+        IE: "Internal error",
+        UNKNOWN: "Unknown error"
+    }
 
     @staticmethod
     def stringBase(res):

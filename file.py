@@ -2,6 +2,7 @@ import os
 import json
 
 runDir = 'run/'
+outFileName = runDir + 'out.tmp'
 
 def removeHiddenFiles(li):
     return [i for i in li if not i.startswith('.')]

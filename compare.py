@@ -30,3 +30,17 @@ if __name__ == "__main__":
             raise ValueError('Bad arguments')
     except ValueError as e:
         sys.exit(e)
+
+##############################
+
+methods = {
+    "strict": strictCompare,
+    "line": lineCompare
+}
+
+def getCompareMethod(conf):
+    try:
+        return methods[conf]
+    except KeyError:
+        raise NotImplementedError
+

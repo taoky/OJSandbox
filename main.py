@@ -29,4 +29,4 @@ if __name__ == '__main__':
                 continue
             config = file.loadProblemConfig(filename)
             res = sandbox.safeJudge(filename, fileExtension, relaPath, config)
-            print('Result {}: {}'.format(thisPlayer, res))
+            print('{} on {}: {}'.format(thisPlayer, config['title'], res))
