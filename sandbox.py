@@ -13,8 +13,8 @@ def writeResult(res, fee, reason, i):
 
 def judgeProcessC(sourceFileName, sourceFileExt, directory, problemConfig):
     # WARNING: IT IS UNSAFE NOW!
-    rsourceFileName = directory + sourceFileName
-    rsourceCodeName = rsourceFileName + sourceFileExt
+    rsourceFileName = file.runDir + sourceFileName
+    rsourceCodeName = directory + sourceFileName + sourceFileExt
     
     # os.system(compileHelper[sourceFileExt] % (rsourceCodeName, rsourceFileName))
     try:
@@ -33,8 +33,10 @@ def judgeProcessC(sourceFileName, sourceFileExt, directory, problemConfig):
         input = open(file.getProblemDirectory(sourceFileName) + i[0])
         output = open(tmpfile, "w")
         proFileName = os.path.splitext(i[0])[0]
+        runHelper = langSupport.executeHelper[sourceFileExt.lower()]
+        runCommand = langSupport.formatHelper(runHelper, exefile=rsourceFileName)
         try:
-            sp = subprocess.run(rsourceFileName, stdin=input, stdout=output, timeout=problemConfig["timeout"] / 1000.0)
+            sp = subprocess.run(runCommand, stdin=input, stdout=output, timeout=problemConfig["timeout"] / 1000.0)
         except subprocess.TimeoutExpired:
             res = {'exe': rsourceFileName,
                    'out': tmpfile}

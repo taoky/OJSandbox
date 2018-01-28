@@ -2,6 +2,7 @@
 import os
 import sandbox
 import file
+import langSupport
 from judgeResult import JudgeResult
 
 if __name__ == '__main__':
@@ -20,7 +21,7 @@ if __name__ == '__main__':
             if not os.path.isfile(sourceRelaPath):
                 print("Ignored %s: Not a file." % sourceRelaPath)
                 continue
-            elif not fileExtension.lower() in file.supported_extension:
+            elif not langSupport.langType(fileExtension.lower()):
                 print("Ignored %s: Unsupported file extension." % sourceRelaPath)
                 continue
             elif not filename in lProblems:
@@ -28,4 +29,4 @@ if __name__ == '__main__':
                 continue
             config = file.loadProblemConfig(filename)
             res = sandbox.safeJudge(filename, fileExtension, relaPath, config)
-            print('{}: {}'.format(thisPlayer, res))
+            print('Result {}: {}'.format(thisPlayer, res))

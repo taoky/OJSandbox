@@ -14,13 +14,16 @@ langs = {
 
 compileHelper = {
     '.c': ["gcc", "-Wall", "-O3", "%i", "-o", "%o"],
-    '.cpp': ["g++", "-Wall", "-O3", "%i", "-o", "%o"]
+    '.cpp': ["g++", "-Wall", "-O3", "%i", "-o", "%o"],
+    '.py': ['cp', '%i', '%o'],
+    '.java': ["javac", "%i"]
 }
 
 executeHelper = {
     '.c': ['%e'],
     '.cpp': ['%e'],
-    '.py': ['python3', '%e']
+    '.py': ['python3', '%e'],
+    '.java': ['javaw', '%e']
 }
 
 def langType(lang):

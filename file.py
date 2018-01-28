@@ -1,7 +1,7 @@
 import os
 import json
 
-supported_extension = [".c", ".cpp"]
+runDir = 'run/'
 
 def removeHiddenFiles(li):
     return [i for i in li if not i.startswith('.')]
