@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "init.h": "c"
+        "init.h": "c",
+        "util.h": "c"
     }
 }

@@ -148,12 +148,15 @@ int main(int argc, char **argv)
         chdir("/");
         // 5. set uid & gid to nobody
         setNonPrivilegeUser();
+
+        while (!son_exec)
+            ;
+
         // 6. load seccomp rule
         nativeProgRules(exec_prog);
         // 7. exec
         char *f_argv[] = {NULL}, *f_envp[] = {NULL};
-        while (!son_exec)
-            ;
+
         execve(exec_prog, f_argv, f_envp);
         fprintf(stderr, "%s error\n", exec_prog);
         perror("exec error");
