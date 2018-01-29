@@ -169,7 +169,7 @@ bool clearFile(char *path) {
 }
 
 int timevalms(const struct timeval *timev) {
-	return timev->tv_sec * 1000 + timev->tv_usec;
+	return timev->tv_sec * 1000 + timev->tv_usec / 1000;
 }
 
 void setrlimStruct(rlim_t num, struct rlimit * st) {

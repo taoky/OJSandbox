@@ -7,35 +7,36 @@ pid_t son;
 static int son_exec = 0;
 bool killedByTimer = false;
 
-struct runArgs_t {
-    char *chrootDir; // --chroot-dir
-    char *execFileName; // --exec-file
-    char *execProfile; // --exec-argument, optional
-    char *inputFileName; // --input
-    char *outputFileName; // --output
-    char *logFileName; // --log, optional
-    int timeLimit; // --time-limit
-    int memLimit; // --mem-limit
+struct runArgs_t
+{
+    char *chrootDir;        // --chroot-dir
+    char *execFileName;     // --exec-file
+    char *execProfile;      // --exec-argument, optional
+    char *inputFileName;    // --input
+    char *outputFileName;   // --output
+    char *logFileName;      // --log, optional
+    long timeLimit;         // --time-limit
+    long memLimit;          // --mem-limit
     bool isSeccompDisabled; // --disable-seccomp, optional
 } runArgs;
 
-static const char *optString = "cepiotmlh?";
+static const char *optString = "c:e:p:i:o:t:m:l:h?";
 
 static const struct option longOpts[] = {
-    { "chroot-dir", required_argument, NULL, 'c'},
-    { "exec-file", required_argument, NULL, 'e'},
-    { "exec-profile", required_argument, NULL, 'p'},
-    { "input", required_argument, NULL, 'i'},
-    { "output", required_argument, NULL, 'o'},
-    { "log", required_argument, NULL, 'l'},
-    { "time-limit", required_argument, NULL, 't'},
-    { "mem-limit", required_argument, NULL, 'm'},
-    { "disable-seccomp", no_argument, NULL, 0},
-    { "help", no_argument, NULL, 'h'},
-    { NULL, no_argument, NULL, 0}
-};
+    {"chroot-dir", required_argument, NULL, 'c'},
+    {"exec-file", required_argument, NULL, 'e'},
+    {"exec-profile", required_argument, NULL, 'p'},
+    {"input", required_argument, NULL, 'i'},
+    {"output", required_argument, NULL, 'o'},
+    {"log", required_argument, NULL, 'l'},
+    {"time-limit", required_argument, NULL, 't'},
+    {"mem-limit", required_argument, NULL, 'm'},
+    {"disable-seccomp", no_argument, NULL, 0},
+    {"help", no_argument, NULL, 'h'},
+    {NULL, no_argument, NULL, 0}};
 
-void display_help(char *a0) {
+void display_help(char *a0)
+{
     log("This is the backend of the sandbox for oj.\n");
     log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [-p name] [-l file] [-t num] [-m num] [-h]\n", a0);
     log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--exec-profile name] [--log file] [--time-limit num] [--mem-limit num] [--help]\n", a0);
@@ -45,62 +46,83 @@ void display_help(char *a0) {
     log("--input or -i: The file that will be the input source.\n");
     log("--output or -o: The file that will be the output (stdout) of the program.\n");
     log("--log or -l: (Optional) The file that will be the output (stderr) of the sandbox & program.\n");
-    log("--time-limit or -t: (Optional) The time limit of the program.\n");
-    log("--mem-limit or -m: (Optional) The memory size limit of the program.\n");
+    log("--time-limit or -t: (Optional) The time (ms) limit of the program.\n");
+    log("--mem-limit or -m: (Optional) The memory size (MB) limit of the program.\n");
     log("--disable-seccomp: (Optional) This will disable system call filter.\n");
     log("--help or -h: (Optional) This will show this message.\n");
     exit(0);
 }
 
-void option_handle(int argc, char **argv) {
+void option_handle(int argc, char **argv)
+{
     // init runArgs
     runArgs.timeLimit = runArgs.memLimit = -1;
     runArgs.chrootDir = runArgs.execFileName = runArgs.execProfile = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
     runArgs.isSeccompDisabled = false;
     int longIndex;
+    char *endptr;
+    long val;
     int opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
-    while (opt != -1) {
-        switch(opt) {
-            case 'c':
-                runArgs.chrootDir = optarg;
-                break;
-            case 'e':
-                runArgs.execFileName = optarg;
-                break;
-            case 'p':
-                runArgs.execProfile = optarg;
-                break;
-            case 'i':
-                runArgs.inputFileName = optarg;
-                break;
-            case 'o':
-                runArgs.outputFileName = optarg;
-                break;
-            case 'l':
-                runArgs.logFileName = optarg;
-                break;
-            case 't':
-                runArgs.timeLimit = *optarg;
-                break;
-            case 'm':
-                runArgs.memLimit = *optarg;
-                break;
-            case 'h':
-            case '?':
-                display_help(argv[0]);
-                break;
-            case 0:
-                if (strcmp("disable-seccomp", longOpts[longIndex].name) == 0) {
-                    runArgs.isSeccompDisabled = true;
-                }
-                break;
-            default:
-                break;
+    while (opt != -1)
+    {
+        switch (opt)
+        {
+        case 'c':
+            runArgs.chrootDir = optarg;
+            break;
+        case 'e':
+            runArgs.execFileName = optarg;
+            break;
+        case 'p':
+            runArgs.execProfile = optarg;
+            break;
+        case 'i':
+            runArgs.inputFileName = optarg;
+            break;
+        case 'o':
+            runArgs.outputFileName = optarg;
+            break;
+        case 'l':
+            runArgs.logFileName = optarg;
+            break;
+        case 't':
+            errno = 0;
+            val = strtol(optarg, &endptr, 10);
+            if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0) || (endptr == optarg) || val <= 0)
+            {
+                log("Time limit error.\n");
+                exit(-1);
+            }
+            runArgs.timeLimit = val;
+            break;
+        case 'm':
+            errno = 0;
+            val = strtol(optarg, &endptr, 10);
+            if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0) || (endptr == optarg) || val <= 0)
+            {
+                log("Memory limit error.\n");
+                exit(-1);
+            }
+            runArgs.memLimit = val;
+            break;
+        case 'h':
+        case '?':
+            display_help(argv[0]);
+            break;
+        case 0:
+            if (strcmp("disable-seccomp", longOpts[longIndex].name) == 0)
+            {
+                runArgs.isSeccompDisabled = true;
+            }
+            break;
+        default:
+            break;
         }
         opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
     }
-    // check 
-    if (runArgs.chrootDir == NULL || runArgs.execFileName == NULL || runArgs.inputFileName == NULL || runArgs.outputFileName == NULL) {
+    // check
+    if (runArgs.chrootDir == NULL || runArgs.execFileName == NULL || runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
+    {
         log("Missing argument(s).\nUse %s -h or %s --help to get help.\n", argv[0], argv[0]);
         exit(-1);
     }
@@ -117,11 +139,11 @@ void killChild()
     int res = kill(son, SIGKILL);
     if (res == -1 && errno == ESRCH)
     {
-        fprintf(stderr, "Cannot find child process. Maybe it has exited.\n");
+        log("Cannot find child process. Maybe it has exited.\n");
     }
     else if (res == -1)
     {
-        fprintf(stderr, "Failed to kill child.\n");
+        log("Failed to kill child.\n");
     }
     killedByTimer = true;
 }
@@ -191,37 +213,28 @@ void fileRedirect(char inputpath[], char outputpath[])
     }
 }
 
+void logRedirect(char logpath[])
+{
+    /* redirect stderr (global) */
+    if (logpath != NULL)
+    {
+        FILE *log_file = fopen(logpath, "w");
+        if (dup2(fileno(log_file), fileno(stderr)) == -1)
+        {
+            errorExit(RDERR);
+        }
+    }
+}
+
 int main(int argc, char **argv)
 {
     if (!isRootUser())
     {
-        fprintf(stderr, "This program should be run only in root user!\n");
+        log("This program requires root user!\n");
         exit(-1);
     }
-    // if (argc != 7)
-    // {
-    //     fprintf(stderr, "Usage: %s CHROOT_DIR EXEC_FILE INPUT_FILE OUTPUT_FILE TIME_LIMIT (ms) MEMORY_LIMIT (MB)\n", argv[0]);
-    //     fprintf(stderr, "Example: %s /tmp/ojs-123456 exec input output 1000 128\n", argv[0]);
-    //     fprintf(stderr, "Please make sure to ./init before running this sandbox.\n");
-    //     exit(-1);
-    // }
-    char *chroot_dir = argv[1];
-    char *exec_prog = argv[2];
-    char *input_file = argv[3];
-    char *output_file = argv[4];
-    long time_limit, memory_limit;
-    errno = 0;
-    time_limit = strtol(argv[5], NULL, 10);
-    if (errno != 0)
-    {
-        errorExit("time_limit error");
-    }
-    memory_limit = strtol(argv[6], NULL, 10);
-    if (errno != 0)
-    {
-        errorExit("memory_limit error");
-    }
-
+    option_handle(argc, argv);
+    logRedirect(runArgs.logFileName);
     signal(SIGUSR1, ready);
     son_exec = 0;
     son = fork();
@@ -233,17 +246,18 @@ int main(int argc, char **argv)
     if (son == 0)
     {
         // child
+        char *execFileBaseName = basename(runArgs.execFileName);
         // 1. copy prog
-        char *copyprogTo = pathCat(chroot_dir, exec_prog);
-        copyFile(exec_prog, copyprogTo);
-        // char *copyinputTo = pathCat(chroot_dir, input_file);
-        // copyFile(input_file, copyinputTo);
+        char *chrootTmp = pathCat(runArgs.chrootDir, "/tmp");
+        char *copyprogTo = pathCat(chrootTmp, execFileBaseName);
+        copyFile(runArgs.execFileName, copyprogTo);
+        char *chrootProg = pathCat("/tmp/", execFileBaseName);
         // 2. set rlimit
-        setLimit(memory_limit, (int)((time_limit + 1000) / 1000), 1, 16, memory_limit); // allow 1 process, 16 MB file size, rough time limit
+        setLimit(runArgs.memLimit, (int)((runArgs.timeLimit + 1000) / 1000), 1, 16, runArgs.memLimit); // allow 1 process, 16 MB file size, rough time limit
         // 3. redirect stdin & stdout
-        fileRedirect(input_file, output_file);
+        fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
         // 4. chroot & setuid!
-        chroot(chroot_dir);
+        chroot(runArgs.chrootDir);
         chdir("/");
         // 5. set uid & gid to nobody
         setNonPrivilegeUser();
@@ -252,29 +266,22 @@ int main(int argc, char **argv)
             ;
 
         // 6. load seccomp rule
-        nativeProgRules(exec_prog);
+        nativeProgRules(chrootProg);
         // 7. exec
         char *f_argv[] = {NULL}, *f_envp[] = {NULL};
-
-        execve(exec_prog, f_argv, f_envp);
-        fprintf(stderr, "%s error\n", exec_prog);
-        perror("exec error");
+        execve(chrootProg, f_argv, f_envp);
+        perror("exec error"); // unreachable normally
     }
     else
     {
         // parent
-        // 1. init cgroup
-        writeFileInt(CGROUP_DIR "cpuacct/" CNAME "/tasks", son, true);
-        writeFileInt(CGROUP_DIR "memory/" CNAME "/tasks", son, true);
-        writeFileInt(CGROUP_DIR "pids/" CNAME "/tasks", son, true);
-        writeFileInt(CGROUP_DIR "memory/" CNAME "/memory.limit_in_bytes", memory_limit * (1 << 20), true);
-        writeFileInt(CGROUP_DIR "pids/" CNAME "/pids.max", 1, true); // allow 1 process only
+
 
         // 2. set timer
         struct itimerval itval;
         itval.it_interval.tv_sec = itval.it_interval.tv_usec = 0; // only once
-        itval.it_value.tv_sec = time_limit / 1000;
-        itval.it_value.tv_usec = time_limit % 1000 + 500;
+        itval.it_value.tv_sec = runArgs.timeLimit / 1000;
+        itval.it_value.tv_usec = runArgs.timeLimit % 1000 + 500;
         if (setitimer(ITIMER_REAL, &itval, NULL) == -1)
         {
             perror("setitimer error");
@@ -287,9 +294,8 @@ int main(int argc, char **argv)
         wait3(&status, WUNTRACED, &sonUsage);
         int rusage_total_time = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
         int rusage_memory = sonUsage.ru_minflt * (getpagesize() >> 10);
-        int cgroup_total_time = readFileLL(CGROUP_DIR "cpuacct/" CNAME "/cpuacct.usage") / 1000000;
-        int cgroup_memory = readFileLL(CGROUP_DIR "memory/" CNAME "/memory.max_usage_in_bytes") / (1 << 20);
-        printf("ru_time: %d, ru_mem: %d, cg_time: %d, cg_mem: %d\n", rusage_total_time, rusage_memory, cgroup_total_time, cgroup_memory);
+       
+        printf("ru_time: %d, ru_mem: %d\n", rusage_total_time, rusage_memory);
         if (WIFEXITED(status))
         {
             puts("The program terminated.");
