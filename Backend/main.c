@@ -40,14 +40,14 @@ void display_help(char *a0)
     log("This is the backend of the sandbox for oj.\n");
     log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [-p name] [-l file] [-t num] [-m num] [-h]\n", a0);
     log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--exec-profile name] [--log file] [--time-limit num] [--mem-limit num] [--help]\n", a0);
-    log("--chroot-dir or -c: The directory that will be chroot(2)ed\n");
+    log("--chroot-dir or -c: The directory that will be chroot(2)ed in.\n");
     log("--exec-file or -e: The program (or source file) that will be executed or interpreted.\n");
     log("--exec-profile or -p: (Optional) The profile for a explicit program language (such as python, java)\n");
     log("--input or -i: The file that will be the input source.\n");
     log("--output or -o: The file that will be the output (stdout) of the program.\n");
-    log("--log or -l: (Optional) The file that will be the output (stderr) of the sandbox & program.\n");
-    log("--time-limit or -t: (Optional) The time (ms) limit of the program.\n");
-    log("--mem-limit or -m: (Optional) The memory size (MB) limit of the program.\n");
+    log("--log or -l: (Optional, stderr by default) The file that will be the output (stderr) of the sandbox & program.\n");
+    log("--time-limit or -t: (Optional, unlimited by default) The time (ms) limit of the program.\n");
+    log("--mem-limit or -m: (Optional, unlimited by default) The memory size (MB) limit of the program.\n");
     log("--disable-seccomp: (Optional) This will disable system call filter.\n");
     log("--help or -h: (Optional) This will show this message.\n");
     exit(0);
@@ -134,18 +134,19 @@ void ready(int sig)
         son_exec = 1;
 }
 
-void killChild()
+void killChild(int sig)
 {
     int res = kill(son, SIGKILL);
     if (res == -1 && errno == ESRCH)
     {
-        log("Cannot find child process. Maybe it has exited.\n");
+        // nothing~ The child has exited.
     }
     else if (res == -1)
     {
         log("Failed to kill child.\n");
     }
-    killedByTimer = true;
+    if (sig == SIGALRM)
+        killedByTimer = true;
 }
 
 void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t maxFileSize, rlim_t maxStackSize)
@@ -192,10 +193,6 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     {
         errorExit(RLERR);
     }
-    // set num of file descriptor:
-    //if (setrlimit(RLIMIT_NOFILE, &nofile) != 0) {
-    //	errorExit(RLERR);
-    //}
 }
 
 void fileRedirect(char inputpath[], char outputpath[])
@@ -238,6 +235,14 @@ int main(int argc, char **argv)
     signal(SIGUSR1, ready);
     son_exec = 0;
     son = fork();
+
+    char *execFileBaseName = basename(runArgs.execFileName);
+    // 1. copy prog
+    char *chrootTmp = pathCat(runArgs.chrootDir, "/tmp");
+    char *copyprogTo = pathCat(chrootTmp, execFileBaseName);
+    copyFile(runArgs.execFileName, copyprogTo);
+    char *chrootProg = pathCat("/tmp/", execFileBaseName);
+
     if (son < 0)
     {
         // fork failed
@@ -246,12 +251,7 @@ int main(int argc, char **argv)
     if (son == 0)
     {
         // child
-        char *execFileBaseName = basename(runArgs.execFileName);
-        // 1. copy prog
-        char *chrootTmp = pathCat(runArgs.chrootDir, "/tmp");
-        char *copyprogTo = pathCat(chrootTmp, execFileBaseName);
-        copyFile(runArgs.execFileName, copyprogTo);
-        char *chrootProg = pathCat("/tmp/", execFileBaseName);
+
         // 2. set rlimit
         setLimit(runArgs.memLimit, (int)((runArgs.timeLimit + 1000) / 1000), 1, 16, runArgs.memLimit); // allow 1 process, 16 MB file size, rough time limit
         // 3. redirect stdin & stdout
@@ -266,7 +266,8 @@ int main(int argc, char **argv)
             ;
 
         // 6. load seccomp rule
-        nativeProgRules(chrootProg);
+        if (!runArgs.isSeccompDisabled)
+            nativeProgRules(chrootProg);
         // 7. exec
         char *f_argv[] = {NULL}, *f_envp[] = {NULL};
         execve(chrootProg, f_argv, f_envp);
@@ -275,13 +276,15 @@ int main(int argc, char **argv)
     else
     {
         // parent
-
-
+        char procStat[12 + 10] = {};
+        sprintf(procStat, "/proc/%d/stat", son);
+        log(procStat);
         // 2. set timer
+        signal(SIGALRM, killChild);
         struct itimerval itval;
         itval.it_interval.tv_sec = itval.it_interval.tv_usec = 0; // only once
         itval.it_value.tv_sec = runArgs.timeLimit / 1000;
-        itval.it_value.tv_usec = runArgs.timeLimit % 1000 + 500;
+        itval.it_value.tv_usec = (runArgs.timeLimit % 1000 + 500) * 1000;
         if (setitimer(ITIMER_REAL, &itval, NULL) == -1)
         {
             perror("setitimer error");
@@ -291,25 +294,45 @@ int main(int argc, char **argv)
         // 4. wait & cleanup
         struct rusage sonUsage;
         int status;
-        wait3(&status, WUNTRACED, &sonUsage);
+        unsigned long rusage_memory1 = 0, mem_now_1 = 0;
+        while (wait3(&status, WUNTRACED | WNOHANG, &sonUsage) == 0) {
+            FILE *procFile = fopen(procStat, "r");
+            fscanf(procFile, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %lu", &mem_now_1);
+            fclose(procFile);
+            if (mem_now_1 > rusage_memory1) {
+                rusage_memory1 = mem_now_1;
+            }
+        }
+        rusage_memory1 /= (1 << 10); // accurate virt usage
         int rusage_total_time = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
-        int rusage_memory = sonUsage.ru_minflt * (getpagesize() >> 10);
-       
-        printf("ru_time: %d, ru_mem: %d\n", rusage_total_time, rusage_memory);
+        // long rusage_memory2 = sonUsage.ru_maxrss;
+        printf("ru_time: %d, mem1: %lu\n", rusage_total_time, rusage_memory1);
+        remove(copyprogTo);
+        itval.it_value.tv_sec = itval.it_value.tv_usec = 0; // stop timer
         if (WIFEXITED(status))
         {
-            puts("The program terminated.");
-            printf("Exit code: %d\n", WEXITSTATUS(status));
+            int ret = WEXITSTATUS(status);
+            if (ret == 0) {
+                puts("Success.");
+            }
+            else {
+                printf("Runtime Error, returns %d\n", ret);
+            }
         }
         else if (WIFSIGNALED(status))
         {
-            puts("The program was terminated by a signal.");
-            printf("Signal code: %d\n", WTERMSIG(status));
+            int sig = WTERMSIG(status);
+            if (killedByTimer || sig == SIGXCPU) {
+                printf("Time Limit Exceeded\n");
+            }
+            if (sig == SIGXFSZ) {
+                printf("File Size Limit Exceeded\n");
+            }
         }
         else if (WIFSTOPPED(status))
         {
-            puts("The program was stopped by a signal. (WUNTRACED or being traced).");
-            printf("Signal code: %d\n", WSTOPSIG(status));
+            killChild(WSTOPSIG(status));
+            printf("System Error: Strangely being stopped.\n");
         }
     }
 

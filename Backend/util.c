@@ -65,7 +65,7 @@ char *pathCat(char *path, char *fileName) {
      * free when necessary
 	 */
 	int plen = strlen(path), flen = strlen(fileName);
-	char *res = malloc(plen + flen);
+	char *res = malloc(plen + flen + 2);
 	strcpy(res, path);
 	res[plen] = '/';
 	strcpy(res + plen + 1, fileName);
