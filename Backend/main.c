@@ -278,7 +278,6 @@ int main(int argc, char **argv)
         // parent
         char procStat[12 + 10] = {};
         sprintf(procStat, "/proc/%d/stat", son);
-        log(procStat);
         // 2. set timer
         signal(SIGALRM, killChild);
         struct itimerval itval;
@@ -289,24 +288,29 @@ int main(int argc, char **argv)
         {
             perror("setitimer error");
         }
+        struct timeval progStart, progEnd, useTime;
+        gettimeofday(&progStart, NULL);
         // 3. call son to exec
         kill(son, SIGUSR1);
         // 4. wait & cleanup
         struct rusage sonUsage;
         int status;
-        unsigned long rusage_memory1 = 0, mem_now_1 = 0;
+        unsigned long memory_max = 0, memory_now = 0;
         while (wait3(&status, WUNTRACED | WNOHANG, &sonUsage) == 0) {
             FILE *procFile = fopen(procStat, "r");
-            fscanf(procFile, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %lu", &mem_now_1);
+            fscanf(procFile, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %lu", &memory_now);
             fclose(procFile);
-            if (mem_now_1 > rusage_memory1) {
-                rusage_memory1 = mem_now_1;
+            if (memory_now > memory_max) {
+                memory_max = memory_now;
             }
         }
-        rusage_memory1 /= (1 << 10); // accurate virt usage
-        int rusage_total_time = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
+        memory_max /= (1 << 10); // accurate virt usage
+        // int rusage_total_time = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
         // long rusage_memory2 = sonUsage.ru_maxrss;
-        printf("ru_time: %d, mem1: %lu\n", rusage_total_time, rusage_memory1);
+        gettimeofday(&progEnd, NULL);
+        timersub(&progEnd, &progStart, &useTime);
+        int actualTime = timevalms(&useTime);
+        printf("Time: %d, Memory: %lu\n", actualTime, memory_max);
         remove(copyprogTo);
         itval.it_value.tv_sec = itval.it_value.tv_usec = 0; // stop timer
         if (WIFEXITED(status))
