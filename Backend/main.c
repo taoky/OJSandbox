@@ -157,25 +157,32 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
 	 * maxFileSize (MB)
 	 * maxStackSize (MB)
 	 */
-    maxMemory *= (1 << 20);
+    if (maxMemory != -1)
+        maxMemory *= (1 << 20);
     maxFileSize *= (1 << 20);
-    maxStackSize *= (1 << 20);
-    struct rlimit max_memory, max_cpu_time, max_process_num, max_file_size, max_stack, nocore /*, nofile*/;
-    setrlimStruct(maxMemory, &max_memory);
-    setrlimStruct(maxCPUTime, &max_cpu_time);
+    if (maxStackSize != -1)
+        maxStackSize *= (1 << 20);
+    struct rlimit max_memory, max_cpu_time, max_process_num, max_file_size, max_stack, nocore;
+    if (maxMemory != -1)
+        setrlimStruct(maxMemory, &max_memory);
+    if (maxCPUTime != -1)
+        setrlimStruct(maxCPUTime, &max_cpu_time);
     setrlimStruct(maxProcessNum, &max_process_num);
     setrlimStruct(maxFileSize, &max_file_size);
-    setrlimStruct(maxStackSize, &max_stack);
+    if (maxStackSize != -1)
+        setrlimStruct(maxStackSize, &max_stack);
     setrlimStruct(0, &nocore);
     // setrlimStruct(4, &nofile); // stdin, stdout & stderr
-    if (setrlimit(RLIMIT_AS, &max_memory) != 0)
-    {
-        errorExit(RLERR);
-    }
-    if (setrlimit(RLIMIT_CPU, &max_cpu_time) != 0)
-    {
-        errorExit(RLERR);
-    }
+    if (maxMemory != -1)
+        if (setrlimit(RLIMIT_AS, &max_memory) != 0)
+        {
+            errorExit(RLERR);
+        }
+    if (maxCPUTime != -1)
+        if (setrlimit(RLIMIT_CPU, &max_cpu_time) != 0)
+        {
+            errorExit(RLERR);
+        }
     if (setrlimit(RLIMIT_NPROC, &max_process_num) != 0)
     {
         errorExit(RLERR);
@@ -184,10 +191,11 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     {
         errorExit(RLERR);
     }
-    if (setrlimit(RLIMIT_STACK, &max_stack) != 0)
-    {
-        errorExit(RLERR);
-    }
+    if (maxStackSize != -1)
+        if (setrlimit(RLIMIT_STACK, &max_stack) != 0)
+        {
+            errorExit(RLERR);
+        }
     // set no core file:
     if (setrlimit(RLIMIT_CORE, &nocore) != 0)
     {
@@ -253,7 +261,9 @@ int main(int argc, char **argv)
         // child
 
         // 2. set rlimit
-        setLimit(runArgs.memLimit, (int)((runArgs.timeLimit + 1000) / 1000), 1, 16, runArgs.memLimit); // allow 1 process, 16 MB file size, rough time limit
+        setLimit(runArgs.memLimit,
+                 runArgs.timeLimit == -1 ? -1 : (int)((runArgs.timeLimit + 1000) / 1000),
+                 1, 16, runArgs.memLimit); // allow 1 process, 16 MB file size, rough time limit
         // 3. redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
         // 4. chroot & setuid!
@@ -296,11 +306,13 @@ int main(int argc, char **argv)
         struct rusage sonUsage;
         int status;
         unsigned long memory_max = 0, memory_now = 0;
-        while (wait3(&status, WUNTRACED | WNOHANG, &sonUsage) == 0) {
+        while (wait3(&status, WUNTRACED | WNOHANG, &sonUsage) == 0)
+        {
             FILE *procFile = fopen(procStat, "r");
             fscanf(procFile, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %lu", &memory_now);
             fclose(procFile);
-            if (memory_now > memory_max) {
+            if (memory_now > memory_max)
+            {
                 memory_max = memory_now;
             }
         }
@@ -316,21 +328,33 @@ int main(int argc, char **argv)
         if (WIFEXITED(status))
         {
             int ret = WEXITSTATUS(status);
-            if (ret == 0) {
+            if (ret == 0)
+            {
                 puts("Success.");
             }
-            else {
+            else
+            {
                 printf("Runtime Error, returns %d\n", ret);
             }
         }
         else if (WIFSIGNALED(status))
         {
             int sig = WTERMSIG(status);
-            if (killedByTimer || sig == SIGXCPU) {
+            if (killedByTimer || sig == SIGXCPU)
+            {
                 printf("Time Limit Exceeded\n");
             }
-            if (sig == SIGXFSZ) {
+            else if (sig == SIGXFSZ)
+            {
                 printf("File Size Limit Exceeded\n");
+            }
+            else if (memory_max > runArgs.memLimit * (1 << 10))
+            {
+                printf("Memory Limit Exceeded\n");
+            }
+            else
+            {
+                printf("Runtime Error. Signal: %d\n", sig);
             }
         }
         else if (WIFSTOPPED(status))
