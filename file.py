@@ -35,6 +35,5 @@ def getProblemFiles(problemName):
     res = [(ins[i], outs[i]) for i in range(len(ins))]
     for i in outs:
         if not os.path.exists(getProblemDirectory(problemName) + i):
-            print("Problem is not configured properly. %s cannot found." % (getProblemDirectory(problemName) + i))
-            raise FileNotFoundError
+            raise FileNotFoundError("Problem is not configured properly. {} cannot found.".format(getProblemDirectory(problemName) + i))
     return res
