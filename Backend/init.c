@@ -8,9 +8,6 @@
 char tmpDir[] = "/tmp/ojs-XXXXXX";
 
 void cleanup() {
-    rmdir(CGROUP_DIR "cpuacct/" CNAME);
-    rmdir(CGROUP_DIR "memory/" CNAME);
-    rmdir(CGROUP_DIR "pids/" CNAME);
     system("umount /tmp/ojs-*/*");
     system("umount /tmp/ojs-*/dev/*");
     system("umount /tmp/ojs-*/usr/*");
@@ -27,17 +24,6 @@ int main(int argc, char **argv) {
     if (argc == 2 && strcmp(argv[1], "cleanup") == 0) {
         cleanup();
     }
-    int res;
-    res = mkdir(CGROUP_DIR "cpuacct/" CNAME, MODE0);
-    if (res == -1 && errno != EEXIST)
-        errorExit(CGERR);
-    res = mkdir(CGROUP_DIR "memory/" CNAME, MODE0);
-    if (res == -1 && errno != EEXIST)
-        errorExit(CGERR);
-    res = mkdir(CGROUP_DIR "pids/" CNAME, MODE0);
-    if (res == -1 && errno != EEXIST)
-        errorExit(CGERR);
-    
     char *tmp = mkdtemp(tmpDir);
     if (tmp == NULL) {
         errorExit(TPERR);
@@ -68,7 +54,7 @@ int main(int argc, char **argv) {
     // mkdir("usr/libexec", MODE0);
     mkdir("usr/share", MODE0);
 
-    writeFileStr("etc/passwd", "nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin", true);
+    // writeFileStr("etc/passwd", "nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin", true);
     bindMountHelper("/bin", "bin");
     bindMountHelper("/etc/alternatives", "etc/alternatives");
     bindMountHelper("/lib", "lib");
