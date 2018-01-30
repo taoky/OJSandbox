@@ -14,10 +14,6 @@ void nativeProgRules(char *progExec)
 {
     // native program (C/C++): whitelist
     int trusted_len = sizeof(trusted_syscalls) / sizeof(int);
-    int blocked_syscalls[] = {
-        // ...
-    };
-    char lib[] = "/lib/x86_64-linux-gnu/libc.so.6";
     // scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);
     scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_ERRNO(1));
     if (ctx == NULL)

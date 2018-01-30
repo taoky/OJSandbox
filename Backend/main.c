@@ -20,6 +20,7 @@ struct runArgs_t
     long memLimit;          // --mem-limit
     bool isSeccompDisabled; // --disable-seccomp, optional
     bool isCommandEnabled;  // --exec-command
+    bool isMultiProcess;    // --allow-multi-process
 } runArgs;
 
 static const char *optString = "+c:e:i:o:t:m:l:h?";
@@ -35,6 +36,7 @@ static const struct option longOpts[] = {
     {"mem-limit", required_argument, NULL, 'm'},
     {"disable-seccomp", no_argument, NULL, 0},
     {"copy-back", required_argument, NULL, 0},
+    {"allow-multi-process", no_argument, NULL, 0},
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
@@ -62,8 +64,8 @@ void option_handle(int argc, char **argv)
     // init runArgs
     runArgs.timeLimit = runArgs.memLimit = -1;
     runArgs.chrootDir = runArgs.execFileName = runArgs.copyBackFileName = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
-    runArgs.isSeccompDisabled = runArgs.isCommandEnabled = false;
-    runArgs.execCommand = {NULL};
+    runArgs.isSeccompDisabled = runArgs.isCommandEnabled = runArgs.isMultiProcess = false;
+    runArgs.execCommand = (char **)NULL;
     int longIndex;
     char *endptr;
     long val;
@@ -124,6 +126,10 @@ void option_handle(int argc, char **argv)
             {
                 runArgs.isCommandEnabled = true;
             }
+            if (strcmp("allow-multi-process", longOpts[longIndex].name) == 0)
+            {
+                runArgs.isMultiProcess = true;
+            }            
             break;
         default:
             break;
@@ -196,7 +202,8 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
         setrlimStruct(maxMemory, &max_memory);
     if (maxCPUTime != -1)
         setrlimStruct(maxCPUTime, &max_cpu_time);
-    setrlimStruct(maxProcessNum, &max_process_num);
+    if (maxProcessNum != -1)
+        setrlimStruct(maxProcessNum, &max_process_num);
     setrlimStruct(maxFileSize, &max_file_size);
     if (maxStackSize != -1)
         setrlimStruct(maxStackSize, &max_stack);
@@ -211,10 +218,11 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
         {
             errorExit(RLERR);
         }
-    if (setrlimit(RLIMIT_NPROC, &max_process_num) != 0)
-    {
-        errorExit(RLERR);
-    }
+    if (maxProcessNum != -1)
+        if (setrlimit(RLIMIT_NPROC, &max_process_num) != 0)
+        {
+            errorExit(RLERR);
+        }
     if (setrlimit(RLIMIT_FSIZE, &max_file_size) != 0)
     {
         errorExit(RLERR);
@@ -291,12 +299,13 @@ int main(int argc, char **argv)
         // 2. set rlimit
         setLimit(runArgs.memLimit,
                  runArgs.timeLimit == -1 ? -1 : (int)((runArgs.timeLimit + 1000) / 1000),
-                 1, 16, runArgs.memLimit); // allow 1 process, 16 MB file size, rough time limit
+                 runArgs.isMultiProcess ? -1 : 1, 
+                 16, runArgs.memLimit); // allow 1 process, 16 MB file size, rough time limit
         // 3. redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
         // 4. chroot & setuid!
         chroot(runArgs.chrootDir);
-        chdir("/");
+        chdir("/tmp");
         // 5. set uid & gid to nobody
         setNonPrivilegeUser();
 
@@ -307,11 +316,14 @@ int main(int argc, char **argv)
         if (!runArgs.isSeccompDisabled)
             nativeProgRules(chrootProg);
         // 7. exec
-        char *f_envp[] = {NULL}, *f_argv[] = {NULL};
-        if (runArgs.isCommandEnabled) // TODO
-            f_argv = runArgs.execCommand + 1;
-        execve(chrootProg, f_argv, f_envp);
+        char **f_envp = {NULL}, **f_argv = {NULL};
+        if (runArgs.isCommandEnabled) { // TODO
+            f_argv = runArgs.execCommand;
+            chrootProg = runArgs.execCommand[0];
+        }
+        execv(chrootProg, f_argv);
         perror("exec error"); // unreachable normally
+        return -1;
     }
     else
     {
@@ -321,12 +333,14 @@ int main(int argc, char **argv)
         // 2. set timer
         signal(SIGALRM, killChild);
         struct itimerval itval;
-        itval.it_interval.tv_sec = itval.it_interval.tv_usec = 0; // only once
-        itval.it_value.tv_sec = runArgs.timeLimit / 1000;
-        itval.it_value.tv_usec = (runArgs.timeLimit % 1000 + 500) * 1000;
-        if (setitimer(ITIMER_REAL, &itval, NULL) == -1)
-        {
-            perror("setitimer error");
+        if (runArgs.timeLimit != -1) {
+            itval.it_interval.tv_sec = itval.it_interval.tv_usec = 0; // only once
+            itval.it_value.tv_sec = runArgs.timeLimit / 1000;
+            itval.it_value.tv_usec = (runArgs.timeLimit % 1000 + 500) * 1000;
+            if (setitimer(ITIMER_REAL, &itval, NULL) == -1)
+            {
+                perror("setitimer error");
+            }
         }
         struct timeval progStart, progEnd, useTime;
         gettimeofday(&progStart, NULL);
