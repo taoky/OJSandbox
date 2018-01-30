@@ -295,6 +295,7 @@ int main(int argc, char **argv)
     {
         // fork failed
         errorExit(FOERR);
+        return -1;
     }
     if (son == 0)
     {
