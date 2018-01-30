@@ -11,44 +11,48 @@ struct runArgs_t
 {
     char *chrootDir;        // --chroot-dir
     char *execFileName;     // --exec-file
-    char *execProfile;      // --exec-argument, optional
+    char **execCommand;     // after '--'
     char *inputFileName;    // --input
     char *outputFileName;   // --output
     char *logFileName;      // --log, optional
+    char *copyBackFileName; // --copy-back, optional (compile)
     long timeLimit;         // --time-limit
     long memLimit;          // --mem-limit
     bool isSeccompDisabled; // --disable-seccomp, optional
+    bool isCommandEnabled;  // --exec-command
 } runArgs;
 
-static const char *optString = "c:e:p:i:o:t:m:l:h?";
+static const char *optString = "+c:e:i:o:t:m:l:h?";
 
 static const struct option longOpts[] = {
     {"chroot-dir", required_argument, NULL, 'c'},
     {"exec-file", required_argument, NULL, 'e'},
-    {"exec-profile", required_argument, NULL, 'p'},
+    {"exec-command", no_argument, NULL, 0},
     {"input", required_argument, NULL, 'i'},
     {"output", required_argument, NULL, 'o'},
     {"log", required_argument, NULL, 'l'},
     {"time-limit", required_argument, NULL, 't'},
     {"mem-limit", required_argument, NULL, 'm'},
     {"disable-seccomp", no_argument, NULL, 0},
+    {"copy-back", required_argument, NULL, 0},
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
 void display_help(char *a0)
 {
     log("This is the backend of the sandbox for oj.\n");
-    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [-p name] [-l file] [-t num] [-m num] [-h]\n", a0);
-    log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--exec-profile name] [--log file] [--time-limit num] [--mem-limit num] [--help]\n", a0);
+    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--copy-back file] [-l file] [-t num] [-m num] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
+    log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--copy-back file] [--log file] [--time-limit num] [--mem-limit num] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
     log("--chroot-dir or -c: The directory that will be chroot(2)ed in.\n");
     log("--exec-file or -e: The program (or source file) that will be executed or interpreted.\n");
-    log("--exec-profile or -p: (Optional) The profile for a explicit program language (such as python, java)\n");
+    log("--exec-command: (Optional) Enable the function to run command after '--'.\n");
     log("--input or -i: The file that will be the input source.\n");
     log("--output or -o: The file that will be the output (stdout) of the program.\n");
     log("--log or -l: (Optional, stderr by default) The file that will be the output (stderr) of the sandbox & program.\n");
     log("--time-limit or -t: (Optional, unlimited by default) The time (ms) limit of the program.\n");
     log("--mem-limit or -m: (Optional, unlimited by default) The memory size (MB) limit of the program.\n");
     log("--disable-seccomp: (Optional) This will disable system call filter.\n");
+    log("--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.");
     log("--help or -h: (Optional) This will show this message.\n");
     exit(0);
 }
@@ -57,13 +61,14 @@ void option_handle(int argc, char **argv)
 {
     // init runArgs
     runArgs.timeLimit = runArgs.memLimit = -1;
-    runArgs.chrootDir = runArgs.execFileName = runArgs.execProfile = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
-    runArgs.isSeccompDisabled = false;
+    runArgs.chrootDir = runArgs.execFileName = runArgs.copyBackFileName = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
+    runArgs.isSeccompDisabled = runArgs.isCommandEnabled = false;
+    runArgs.execCommand = {NULL};
     int longIndex;
     char *endptr;
     long val;
-    int opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
-    while (opt != -1)
+    int opt;
+    while ((opt = getopt_long(argc, argv, optString, longOpts, &longIndex)) != EOF)
     {
         switch (opt)
         {
@@ -72,9 +77,6 @@ void option_handle(int argc, char **argv)
             break;
         case 'e':
             runArgs.execFileName = optarg;
-            break;
-        case 'p':
-            runArgs.execProfile = optarg;
             break;
         case 'i':
             runArgs.inputFileName = optarg;
@@ -114,11 +116,38 @@ void option_handle(int argc, char **argv)
             {
                 runArgs.isSeccompDisabled = true;
             }
+            if (strcmp("copy-back", longOpts[longIndex].name) == 0)
+            {
+                runArgs.copyBackFileName = optarg;
+            }
+            if (strcmp("exec-command", longOpts[longIndex].name) == 0)
+            {
+                runArgs.isCommandEnabled = true;
+            }
             break;
         default:
             break;
         }
-        opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
+    }
+    if (runArgs.isCommandEnabled)
+    {
+        if (optind >= argc)
+        {
+            log("Missing command. Remember to add your command after '--'!\n");
+            exit(-1);
+        }
+        // int comLen = 0;
+        // for (int i = optind; i < argc; i++) {
+        //     comLen += strlen(argv[i]) + 1;
+        // }
+        // runArgs.execCommand = malloc(comLen);
+        // for (int i = optind; i < argc; i++) {
+        //     strcat(runArgs.execCommand, argv[i]);
+        //     if (i != argc - 1)
+        //         strcat(runArgs.execCommand, " ");
+        // }
+        // log("Your command: %s\n", runArgs.execCommand);
+        runArgs.execCommand = argv + optind;
     }
     // check
     if (runArgs.chrootDir == NULL || runArgs.execFileName == NULL || runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
@@ -172,7 +201,6 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     if (maxStackSize != -1)
         setrlimStruct(maxStackSize, &max_stack);
     setrlimStruct(0, &nocore);
-    // setrlimStruct(4, &nofile); // stdin, stdout & stderr
     if (maxMemory != -1)
         if (setrlimit(RLIMIT_AS, &max_memory) != 0)
         {
@@ -279,7 +307,9 @@ int main(int argc, char **argv)
         if (!runArgs.isSeccompDisabled)
             nativeProgRules(chrootProg);
         // 7. exec
-        char *f_argv[] = {NULL}, *f_envp[] = {NULL};
+        char *f_envp[] = {NULL}, *f_argv[] = {NULL};
+        if (runArgs.isCommandEnabled) // TODO
+            f_argv = runArgs.execCommand + 1;
         execve(chrootProg, f_argv, f_envp);
         perror("exec error"); // unreachable normally
     }
@@ -309,8 +339,12 @@ int main(int argc, char **argv)
         while (wait3(&status, WUNTRACED | WNOHANG, &sonUsage) == 0)
         {
             FILE *procFile = fopen(procStat, "r");
-            fscanf(procFile, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %lu", &memory_now);
-            fclose(procFile);
+            if (procFile)
+            {
+                // prevent segfault
+                fscanf(procFile, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %lu", &memory_now);
+                fclose(procFile);
+            }
             if (memory_now > memory_max)
             {
                 memory_max = memory_now;
@@ -324,6 +358,11 @@ int main(int argc, char **argv)
         int actualTime = timevalms(&useTime);
         printf("Time: %d, Memory: %lu\n", actualTime, memory_max);
         remove(copyprogTo);
+        if (runArgs.copyBackFileName != NULL) {
+            char *copyFrom = pathCat(chrootTmp, runArgs.copyBackFileName);
+            // copyto TODO
+            copyFile(copyFrom, runArgs.copyBackFileName);
+        }
         itval.it_value.tv_sec = itval.it_value.tv_usec = 0; // stop timer
         if (WIFEXITED(status))
         {
@@ -360,8 +399,9 @@ int main(int argc, char **argv)
         else if (WIFSTOPPED(status))
         {
             killChild(WSTOPSIG(status));
-            printf("System Error: Strangely being stopped.\n");
+            printf("Runtime Error.\n");
         }
+        // free(runArgs.execCommand);
     }
 
     return 0;
