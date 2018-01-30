@@ -40,7 +40,7 @@ tmpTemplate="/tmp/ojs-XXXXXX"
 tmpDir=$(mktemp -d "$tmpTemplate")
 if [ $? -ne 0 ]; then
 	ERR "Create temporary directory failed"
-	exit $TPERR
+	exit -1
 fi
 chmod $MODE0 "$tmpDir"
 cd "$tmpDir"
@@ -51,7 +51,7 @@ chmod $MODE0 proc dev tmp
 mount -t proc -o nosuid proc proc
 mknod dev/null c 1 3
 mknod dev/urandom c 1 9
-chmod $MODE1 /dev/null /dev/urandom
+chmod $MODE1 dev/null dev/urandom
 mount -o bind /dev/null dev/null
 mount -o bind /dev/urandom dev/urandom
 mount -o size=16m,nr_inodes=4k,nosuid -t tmpfs tmp tmp
@@ -60,7 +60,7 @@ for i in bin etc/alternatives lib lib64 usr/bin usr/include usr/lib usr/share #u
 do
 	mkdir -p "$i"
 	chmod $MODE0 "$i"
-	mount -o bind "/$i" "$i"
+	mount -o ro,nosuid,bind "/$i" "$i"
 done
 
 OUT "The tmp dir: ${tmpDir}"
