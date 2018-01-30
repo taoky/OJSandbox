@@ -40,7 +40,7 @@ def plainJudge(program, codeType, infile, outfile, **config):
     #proFileName = os.path.splitext(i[0])[0]
     runHelper = langSupport.executeHelper[codeType]
     running = langSupport.formatHelper(runHelper, exefile=program)
-    runResult = executeProgram(running, stdin=istream, stdout=ostream, timeout=config["timeout"] / 1000.0)
+    runResult = executeProgramDocker(running, stdin=istream, stdout=ostream, timeout=config["timeout"] / 1000.0, src=program, memory=config['ram'])
     rp = runResult.value
     istream.close()
     ostream.close()
