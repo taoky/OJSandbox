@@ -18,15 +18,17 @@ def executeProgram(command, **options):
     try:
         cp = subprocess.run(command, **options)
     except subprocess.TimeoutExpired:
-        return JudgeResult.TLE
+        return JudgeResult(JudgeResult.TLE)
     if cp.returncode != 0:
-        return JudgeResult.RE
+        return JudgeResult(JudgeResult.RE)
+    return JudgeResult(JudgeResult.OK)
 
 def executeProgramDocker(command, **options):
-    #TODO: Fix this
     running = langSupport.formatDockerHelper(command, **options)
     options['encoding'] = 'utf-8'
-    return subprocess.run(command, **options)
+    cp = subprocess.run(command, **options)
+    res = cp.stdout.split('\n')
+    return JudgeResult(getattr(JudgeResult, res[0].strip()))
 
 def plainJudge(program, codeType, infile, outfile, **config):
     inRedir = file.inFileName
@@ -38,13 +40,15 @@ def plainJudge(program, codeType, infile, outfile, **config):
     #proFileName = os.path.splitext(i[0])[0]
     runHelper = langSupport.executeHelper[codeType]
     running = langSupport.formatHelper(runHelper, exefile=program)
-    rp = executeProgram(running, stdin=istream, stdout=ostream, timeout=config["timeout"] / 1000.0)
+    runResult = executeProgram(running, stdin=istream, stdout=ostream, timeout=config["timeout"] / 1000.0)
+    rp = runResult.value
     istream.close()
     ostream.close()
 
-    forwardResults = [JudgeResult.RE, JudgeResult.TLE, JudgeResult.MLE]
+    forwardResults = [JudgeResult.RE, JudgeResult.TLE, JudgeResult.MLE, JudgeResult.FSE]
     if rp in forwardResults:
         os.remove(inRedir)
+        os.remove(outRedir)
         return JudgeResult(rp)
 
     compareMethod = compare.getCompareMethod(config["compare"])
