@@ -54,7 +54,8 @@ void display_help(char *a0)
     log("--time-limit or -t: (Optional, unlimited by default) The time (ms) limit of the program.\n");
     log("--mem-limit or -m: (Optional, unlimited by default) The memory size (MB) limit of the program.\n");
     log("--disable-seccomp: (Optional) This will disable system call filter.\n");
-    log("--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.");
+    log("--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.\n");
+    log("--allow-multi-process: (Optional) disable process number limitation, please make sure you trust the program won't be a fork bomb.\n");
     log("--help or -h: (Optional) This will show this message.\n");
     exit(0);
 }
