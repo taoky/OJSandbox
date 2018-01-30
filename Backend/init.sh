@@ -26,7 +26,7 @@ cleanup() {
 
 
 
-if [ $USER_ID -ne 0 ]; then
+if [ $UID -ne 0 ]; then
 	ERR "This program requires root"
 	exit -1
 fi
@@ -38,6 +38,7 @@ fi
 
 tmpTemplate="/tmp/ojs-XXXXXX"
 tmpDir=$(mktemp "$tmpTemplate")
+rm -f "$tmpDir"
 mkdir "$tmpDir"
 if [ $? -ne 0 ]; then
 	ERR "Create temporary directory failed"
