@@ -6,6 +6,7 @@
 pid_t son;
 static int son_exec = 0;
 bool killedByTimer = false;
+bool memLimKilled = false;
 
 struct runArgs_t
 {
@@ -183,6 +184,8 @@ void killChild(int sig)
     }
     if (sig == SIGALRM)
         killedByTimer = true;
+    else if (sig == SIGUSR1)
+        memLimKilled = true;
 }
 
 void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t maxFileSize, rlim_t maxStackSize)
@@ -298,10 +301,11 @@ int main(int argc, char **argv)
         // child
 
         // 2. set rlimit
-        setLimit(runArgs.memLimit,
+        setLimit(runArgs.memLimit == -1 ? -1 : (runArgs.memLimit * 1.5),
                  runArgs.timeLimit == -1 ? -1 : (int)((runArgs.timeLimit + 1000) / 1000),
                  runArgs.isMultiProcess ? -1 : 1, 
-                 16, runArgs.memLimit); // allow 1 process, 16 MB file size, rough time limit
+                 16, 
+                 runArgs.memLimit == -1 ? -1 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
         // 3. redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
         // 4. chroot & setuid!
@@ -363,6 +367,9 @@ int main(int argc, char **argv)
             if (memory_now > memory_max)
             {
                 memory_max = memory_now;
+                if (memory_max > runArgs.memLimit * (1 << 20)) {
+                    killChild(SIGUSR1); // mem > limit
+                }
             }
         }
         memory_max /= (1 << 10); // accurate virt usage
@@ -402,7 +409,7 @@ int main(int argc, char **argv)
             {
                 printf("File Size Limit Exceeded\n");
             }
-            else if (memory_max > runArgs.memLimit * (1 << 10))
+            else if (memLimKilled || (runArgs.memLimit != -1 && memory_max > runArgs.memLimit * (1 << 10)))
             {
                 printf("Memory Limit Exceeded\n");
             }
