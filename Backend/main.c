@@ -1,6 +1,5 @@
 #include "main.h"
 #include "util.h"
-#include "init.h"
 #include "secrules.h"
 
 pid_t son;
@@ -379,7 +378,6 @@ int main(int argc, char **argv)
         gettimeofday(&progEnd, NULL);
         timersub(&progEnd, &progStart, &useTime);
         int actualTime = timevalms(&useTime);
-        printf("Time: %d, Memory: %lu\n", actualTime, memory_max);
         remove(copyprogTo);
         if (runArgs.copyBackFileName != NULL) {
             char *copyFrom = pathCat(chrootTmp, runArgs.copyBackFileName);
@@ -392,11 +390,11 @@ int main(int argc, char **argv)
             int ret = WEXITSTATUS(status);
             if (ret == 0)
             {
-                puts("Success.");
+                puts("OK");
             }
             else
             {
-                printf("Runtime Error, returns %d\n", ret);
+                puts("RE");
             }
         }
         else if (WIFSIGNALED(status))
@@ -404,26 +402,27 @@ int main(int argc, char **argv)
             int sig = WTERMSIG(status);
             if (killedByTimer || sig == SIGXCPU)
             {
-                printf("Time Limit Exceeded\n");
+                puts("TLE");
             }
             else if (sig == SIGXFSZ)
             {
-                printf("File Size Limit Exceeded\n");
+                puts("FSE");
             }
             else if (memLimKilled || (runArgs.memLimit != -1 && memory_max > runArgs.memLimit * (1 << 10)))
             {
-                printf("Memory Limit Exceeded\n");
+                puts("MLE");
             }
             else
             {
-                printf("Runtime Error. Signal: %d\n", sig);
+                puts("RE");
             }
         }
         else if (WIFSTOPPED(status))
         {
             killChild(WSTOPSIG(status));
-            printf("Runtime Error.\n");
+            puts("RE");
         }
+        printf("%d %lu\n", actualTime, memory_max);
         // free(runArgs.execCommand);
     }
 
