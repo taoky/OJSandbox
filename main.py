@@ -3,7 +3,7 @@ import os
 import sandbox
 import file
 import langSupport
-from judgeResult import JudgeResult
+from judge import JudgeResult
 
 if __name__ == '__main__':
     lPlayers = file.listOfPlayers()

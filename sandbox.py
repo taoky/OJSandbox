@@ -3,7 +3,7 @@ import subprocess
 import compare
 import file
 import langSupport
-from judgeResult import JudgeResult, JudgeError
+from judge import JudgeResult, JudgeError
 
 def writeResult(res, fee, reason, i):
     res.append((i, reason))
