@@ -28,6 +28,22 @@ executeHelper = {
     '.java': ['javaw', '%e']
 }
 
+dockerExe = ['sudo', './main']
+# dockerHelper has a ddifferrennt format from other helpers!
+dockerHelper = {
+    'dir': ['-c', '%'],
+    'src': ['-e', '%'],
+    'stdin': ['-i', '%'],
+    'stdout': ['-o', '%'],
+    'stderr': [], # This is not implemented yet
+    'timeout': ['-t', '%'],
+    'memory': ['-m', '%'],
+    'noseccomp': ['--disable-seccomp'],
+    'multiprocess': ['--allow-multi-process'],
+    'copyback': ['--copy-back', '%']
+    #'command': ['--exec-command', '--', '%']
+}
+
 def langType(lang):
     try:
         return langs[lang]
@@ -44,4 +60,15 @@ def formatHelper(helper, **args):
             pass
     
     return [fdict.get(key, key) for key in helper]
+
+def formatDockerHelper(command, **args):
+    res = dockerExe[:]
+    for key in args:
+        try:
+            arg = [i if i != '%' else arg[key] for i in dockerHelper[key]]
+            res += arg
+        except KeyError:
+            pass
+    res += ['--exec-command', '--'] + command
+    return res
 

@@ -1,7 +1,9 @@
 import os
 import json
 
+workDir = './'
 runDir = 'run/'
+inFileName = runDir + 'in.tmp'
 outFileName = runDir + 'out.tmp'
 
 def removeHiddenFiles(li):
@@ -35,5 +37,5 @@ def getProblemFiles(problemName):
     res = [(ins[i], outs[i]) for i in range(len(ins))]
     for i in outs:
         if not os.path.exists(getProblemDirectory(problemName) + i):
-            raise FileNotFoundError("Problem is not configured properly. {} cannot found.".format(getProblemDirectory(problemName) + i))
+            raise FileNotFoundError("Problem is not configured properly. {} not found.".format(getProblemDirectory(problemName) + i))
     return res
