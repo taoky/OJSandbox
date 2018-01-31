@@ -27,13 +27,17 @@ def executeProgramDocker(command, **options):
     #TODO: Identify the temp directory
     options['dir'] = file.getRunDir()
     running = langSupport.formatDockerHelper(command, **options)
-    print(running)
     pwd = os.getcwd()
     os.chdir(file.getRunDir())
+    print(os.getcwd())
+    print(' '.join(running))
     cp = subprocess.run(running, stdout=subprocess.PIPE, universal_newlines=True)
     os.chdir(pwd)
     res = cp.stdout.split('\n')
     print(res)
+    if cp.returncode != 0:
+        print('docker error')
+        res[0] = 'IE'
     return JudgeResult(getattr(JudgeResult, res[0].strip()))
 
 def plainJudge(program, codeType, infile, outfile, **config):
@@ -57,8 +61,8 @@ def plainJudge(program, codeType, infile, outfile, **config):
 
     forwardResults = [JudgeResult.RE, JudgeResult.TLE, JudgeResult.MLE, JudgeResult.FSE]
     if rp in forwardResults:
-        os.remove(file.getRunDir + inRedir)
-        os.remove(file.getRunDir + outRedir)
+        os.remove(file.getRunDir() + inRedir)
+        os.remove(file.getRunDir() + outRedir)
         return JudgeResult(rp)
 
     compareMethod = compare.getCompareMethod(config["compare"])

@@ -2,6 +2,7 @@
 
 MODE0=0755
 MODE1=0666
+OJSUSER=ojs
 
 OUT() {
 	echo "$@"
@@ -24,7 +25,11 @@ cleanup() {
 	return 0
 }
 
-# useradd -s /usr/sbin/nologin -r -M -d /dev/null ojs
+
+id -u $OJSUSER &>/dev/null
+if [ $? -eq 1 ]; then
+  useradd -s /usr/sbin/nologin -r -M -d /dev/null $OJSUSER
+fi
 
 if [ $UID -ne 0 ]; then
 	ERR "This program requires root"
