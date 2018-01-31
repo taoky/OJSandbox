@@ -30,11 +30,10 @@ def executeProgramDocker(command, **options):
     print(running)
     pwd = os.getcwd()
     os.chdir(file.getRunDir())
-    print(os.getcwd())
     cp = subprocess.run(running, stdout=subprocess.PIPE, universal_newlines=True)
     os.chdir(pwd)
-    #res = cp.stdout.split('\n')
-    res = [' OK ']
+    res = cp.stdout.split('\n')
+    print(res)
     return JudgeResult(getattr(JudgeResult, res[0].strip()))
 
 def plainJudge(program, codeType, infile, outfile, **config):
@@ -52,6 +51,7 @@ def plainJudge(program, codeType, infile, outfile, **config):
     runResult = executeProgramDocker(None, src=program, stdin=inRedir, stdout=outRedir,
         timeout=config['timeout'], memory=config['ram'])
     rp = runResult.value
+    copy(file.getRunDir() + outRedir, os.getcwd())
     #istream.close()
     #ostream.close()
 
