@@ -36,6 +36,9 @@ void copyFile(char *from, char *to) {
 
 void initUser(void) {
     struct passwd *ojsuser = getpwnam("ojs");
+	if (ojsuser == NULL) {
+		errorExit(USERR);
+	}
 	ojsUID = ojsuser->pw_uid;
 	ojsGID = ojsuser->pw_gid;
 	if (!ojsUID || !ojsGID) {
