@@ -16,8 +16,9 @@ struct runArgs_t
     char *outputFileName;   // --output
     char *logFileName;      // --log, optional
     char *copyBackFileName; // --copy-back, optional (compile)
-    unsigned long timeLimit;         // --time-limit
-    unsigned long memLimit;          // --mem-limit
+    char *execStderr;       // --exec-stderr, optional
+    unsigned long timeLimit;// --time-limit
+    unsigned long memLimit; // --mem-limit
     bool isSeccompDisabled; // --disable-seccomp, optional
     bool isCommandEnabled;  // --exec-command
     bool isMultiProcess;    // --allow-multi-process
@@ -37,25 +38,27 @@ static const struct option longOpts[] = {
     {"disable-seccomp", no_argument, NULL, 0},
     {"copy-back", required_argument, NULL, 0},
     {"allow-multi-process", no_argument, NULL, 0},
+    {"exec-stderr", required_argument, NULL, 0},
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
 void display_help(char *a0)
 {
     log("This is the backend of the sandbox for oj.\n");
-    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--copy-back file] [-l file] [-t num] [-m num] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
-    log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--copy-back file] [--log file] [--time-limit num] [--mem-limit num] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
+    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [-l file] [-t num] [-m num] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
+    log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--log file] [--time-limit num] [--mem-limit num] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
     log("--chroot-dir or -c: The directory that will be chroot(2)ed in.\n");
     log("--exec-file or -e: The program (or source file) that will be executed or interpreted.\n");
     log("--exec-command: (Optional) Enable the function to run command after '--'.\n");
     log("--input or -i: The file that will be the input source.\n");
     log("--output or -o: The file that will be the output (stdout) of the program.\n");
-    log("--log or -l: (Optional, stderr by default) The file that will be the output (stderr) of the sandbox & program.\n");
+    log("--log or -l: (Optional, stderr by default) The file that will be the output (stderr) of the sandbox (& program).\n");
     log("--time-limit or -t: (Optional, unlimited by default) The time (ms) limit of the program.\n");
     log("--mem-limit or -m: (Optional, unlimited by default) The memory size (MB) limit of the program.\n");
     log("--disable-seccomp: (Optional) This will disable system call filter.\n");
     log("--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.\n");
     log("--allow-multi-process: (Optional) disable process number limitation, please make sure you trust the program won't be a fork bomb.\n");
+    log("--exec-stderr: (Optional) This file will be the output (stderr) of the executed program.\n");
     log("--help or -h: (Optional) This will show this message.\n");
     exit(0);
 }
@@ -67,6 +70,7 @@ void option_handle(int argc, char **argv)
     runArgs.chrootDir = runArgs.execFileName = runArgs.copyBackFileName = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
     runArgs.isSeccompDisabled = runArgs.isCommandEnabled = runArgs.isMultiProcess = false;
     runArgs.execCommand = (char **)NULL;
+    runArgs.execStderr = NULL;
     int longIndex;
     char *endptr;
     long val;
@@ -130,6 +134,10 @@ void option_handle(int argc, char **argv)
             if (strcmp("allow-multi-process", longOpts[longIndex].name) == 0)
             {
                 runArgs.isMultiProcess = true;
+            }
+            if (strcmp("exec-stderr", longOpts[longIndex].name) == 0)
+            {
+                runArgs.execStderr = optarg;
             }
             break;
         default:
@@ -281,7 +289,7 @@ void fileRedirect(char inputpath[], char outputpath[])
 
 void logRedirect(char logpath[])
 {
-    /* redirect stderr (global) */
+    /* redirect stderr */
     if (logpath != NULL)
     {
         FILE *log_file = fopen(logpath, "w");
@@ -330,6 +338,8 @@ int main(int argc, char **argv)
                  runArgs.memLimit == 0 ? 0 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
         // 3. redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
+
+        logRedirect(runArgs.execStderr);
         // 4. chroot & setuid!
         chroot(runArgs.chrootDir);
         chdir("/tmp");
@@ -350,6 +360,7 @@ int main(int argc, char **argv)
         if (!runArgs.isSeccompDisabled)
             nativeProgRules(chrootProg);
         // 7. exec
+        log("=== PROG START ===\n");
         execv(chrootProg, f_argv);
         perror("exec error"); // unreachable normally
         return -1;
