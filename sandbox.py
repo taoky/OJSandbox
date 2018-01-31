@@ -25,13 +25,15 @@ def executeProgram(command, **options):
 
 def executeProgramDocker(command, **options):
     #TODO: Identify the temp directory
+    options['dir'] = file.getRunDir()
     running = langSupport.formatDockerHelper(command, **options)
     print(running)
     pwd = os.getcwd()
     os.chdir(file.getRunDir())
+    print(os.getcwd())
     cp = subprocess.run(running, stdout=subprocess.PIPE, universal_newlines=True)
     os.chdir(pwd)
-    res = cp.stdout.split('\n')
+    #res = cp.stdout.split('\n')
     res = [' OK ']
     return JudgeResult(getattr(JudgeResult, res[0].strip()))
 
@@ -46,8 +48,9 @@ def plainJudge(program, codeType, infile, outfile, **config):
     runHelper = langSupport.executeHelper[codeType]
     running = langSupport.formatHelper(runHelper, exefile=program)
     #runResult = executeProgram(running, stdin=istream, stdout=ostream, timeout=config['timeout'] / 1000.0)
-    runResult = executeProgramDocker(running, src=program, stdin=inRedir, stdout=outRedir,
-        timeout=config['timeout'] / 1000.0, memory=config['ram'])
+    #runResult = executeProgramDocker(running, src=program, stdin=inRedir, stdout=outRedir,
+    runResult = executeProgramDocker(None, src=program, stdin=inRedir, stdout=outRedir,
+        timeout=config['timeout'], memory=config['ram'])
     rp = runResult.value
     #istream.close()
     #ostream.close()

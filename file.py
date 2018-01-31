@@ -1,29 +1,50 @@
 import os
 import subprocess as sub
 import json
+import shutil as sh
 
-workDir = './'
+workDir = os.getcwd() + '/'
 runDir = None
-initExe = 'Backend/init.sh'
+resourceDir = os.getcwd() + '/Backend/'
+initExe = resourceDir + 'init.sh'
+backendExe = resourceDir + 'main'
 inFileName = 'in.tmp'
 outFileName = 'out.tmp'
 
+def createWorkspace():
+    global runDir
+    try:
+        cp = sub.run([initExe], stdout=sub.PIPE, universal_newlines=True)
+    except FileNotFoundError:
+        raise
+    except:
+        # Not implemented yet
+        raise
+    if cp.returncode != 0:
+        # This may be a bit confusing but just use as a wordaround
+        raise FileNotFoundError("Failed to create workspace")
+    runDir = cp.stdout.split(':')[-1].strip()
+    if not os.path.isdir(runDir):
+        raise FileNotFoundError("Failed to create workspace")
+    sh.copy(backendExe, runDir)
+
+def cleanupWorkspace():
+    global runDir
+    try:
+        cp = sub.run([initExe, 'cleanup'], stdout=sub.PIPE, universal_newlines=True)
+    except FileNotFoundError:
+        raise
+    except:
+        # Not implemented yet
+        raise
+    if cp.returncode != 0:
+        # This may be a bit confusing but just use as a wordaround
+        raise FileNotFoundError('Failed to cleanup workspace')
+
 def getRunDir():
     global runDir
-    if runDir == None:
-        try:
-            cp = sub.run([initExe], stdout=sub.PIPE, universal_newlines=True)
-        except FileNotFoundError:
-            raise
-        except:
-            # Not implemented yet
-            raise
-        if cp.returncode != 0:
-            # This may be a bit confusing but just use as a wordaround
-            raise FileNotFoundError("Failed to create workspace")
-        runDir = cp.stdout.strip()
-        if not os.path.isdir(runDir):
-            raise FileNotFoundError("Failed to create workspace")
+    if runDir is None:
+        createWorkspace()
     if runDir[-1] != '/':
         runDir += '/'
     return runDir

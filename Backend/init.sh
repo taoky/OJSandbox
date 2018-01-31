@@ -63,6 +63,6 @@ do
 	mount -o ro,nosuid,bind "/$i" "$i"
 done
 
-OUT "The tmp dir: ${tmpDir}"
+OUT "${tmpDir}"
 
 

@@ -1,3 +1,5 @@
+import file
+
 COMPILED = 1
 INTERPRETED = 2
 MIXED = 3
@@ -28,7 +30,7 @@ executeHelper = {
     '.java': ['javaw', '%e']
 }
 
-dockerExe = ['sudo', './main']
+dockerExe = ['sudo', file.backendExe]
 # dockerHelper has a ddifferrennt format from other helpers!
 dockerHelper = {
     'dir': ['-c', '%'],
@@ -69,6 +71,7 @@ def formatDockerHelper(command, **args):
             res += arg
         except KeyError:
             pass
-    res += ['--exec-command', '--'] + command
+    if not command is None:
+        res += ['--exec-command', '--'] + command
     return res
 
