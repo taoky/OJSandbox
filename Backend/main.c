@@ -45,8 +45,8 @@ static const struct option longOpts[] = {
 void display_help(char *a0)
 {
     log("This is the backend of the sandbox for oj.\n");
-    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [-l file] [-t num] [-m num] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
-    log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--log file] [--time-limit num] [--mem-limit num] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
+    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
+    log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
     log("--chroot-dir or -c: The directory that will be chroot(2)ed in.\n");
     log("--exec-file or -e: The program (or source file) that will be executed or interpreted.\n");
     log("--exec-command: (Optional) Enable the function to run command after '--'.\n");
@@ -57,7 +57,7 @@ void display_help(char *a0)
     log("--mem-limit or -m: (Optional, unlimited by default) The memory size (MB) limit of the program.\n");
     log("--disable-seccomp: (Optional) This will disable system call filter.\n");
     log("--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.\n");
-    log("--allow-multi-process: (Optional) disable process number limitation, please make sure you trust the program won't be a fork bomb.\n");
+    log("--allow-multi-process: (Optional) change process number limitation from 1 to 128.\n");
     log("--exec-stderr: (Optional) This file will be the output (stderr) of the executed program.\n");
     log("--help or -h: (Optional) This will show this message.\n");
     exit(0);
@@ -410,8 +410,8 @@ int main(int argc, char **argv)
             }
         }
         memory_max /= (1 << 10); // accurate virt usage
-        // int rusage_total_time = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
-        // long rusage_memory2 = sonUsage.ru_maxrss;
+        int cpuTime = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
+        long maxrss = sonUsage.ru_maxrss; // may be required in Java?
         gettimeofday(&progEnd, NULL);
         timersub(&progEnd, &progStart, &useTime);
         int actualTime = timevalms(&useTime);
@@ -460,7 +460,7 @@ int main(int argc, char **argv)
             killChild(WSTOPSIG(status));
             puts("RE");
         }
-        printf("%d %lu\n", actualTime, memory_max);
+        printf("%d %lu %d %ld\n", actualTime, memory_max, cpuTime, maxrss);
         // free(runArgs.execCommand);
     }
 
