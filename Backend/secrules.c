@@ -6,9 +6,18 @@ static int trusted_syscalls[] = {
     SCMP_SYS(readlink), SCMP_SYS(access), SCMP_SYS(fstat),
     SCMP_SYS(write), SCMP_SYS(exit_group), SCMP_SYS(mmap),
     SCMP_SYS(close), SCMP_SYS(mprotect), SCMP_SYS(munmap),
-    SCMP_SYS(read), SCMP_SYS(lseek), // SCMP_SYS(open),
-    SCMP_SYS(stat)
+    SCMP_SYS(read), SCMP_SYS(lseek),
+    SCMP_SYS(stat), // native
+
+    SCMP_SYS(futex), SCMP_SYS(getrandom), SCMP_SYS(getdents),
+    SCMP_SYS(fcntl) // python3
 };
+
+// static int blocked_syscalls[] = {
+//     SCMP_SYS(fork), SCMP_SYS(kill), SCMP_SYS(clone),
+//     SCMP_SYS(prctl), SCMP_SYS(seccomp), SCMP_SYS(vfork),
+//     SCMP_SYS(clone)
+// }
 
 void nativeProgRules(char *progExec)
 {
@@ -40,6 +49,11 @@ void nativeProgRules(char *progExec)
 
 void runnerRules(char *progExec)
 {
-    // whitelist
-    
+    // // blacklist
+    // scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_ALLOW);
+    // if (ctxd == NULL)
+    // {
+    //     errorExit(SCERR);
+    // }
+    // for ()
 }

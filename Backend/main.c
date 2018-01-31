@@ -16,8 +16,8 @@ struct runArgs_t
     char *outputFileName;   // --output
     char *logFileName;      // --log, optional
     char *copyBackFileName; // --copy-back, optional (compile)
-    long timeLimit;         // --time-limit
-    long memLimit;          // --mem-limit
+    unsigned long timeLimit;         // --time-limit
+    unsigned long memLimit;          // --mem-limit
     bool isSeccompDisabled; // --disable-seccomp, optional
     bool isCommandEnabled;  // --exec-command
     bool isMultiProcess;    // --allow-multi-process
@@ -63,7 +63,7 @@ void display_help(char *a0)
 void option_handle(int argc, char **argv)
 {
     // init runArgs
-    runArgs.timeLimit = runArgs.memLimit = -1;
+    runArgs.timeLimit = runArgs.memLimit = 0;
     runArgs.chrootDir = runArgs.execFileName = runArgs.copyBackFileName = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
     runArgs.isSeccompDisabled = runArgs.isCommandEnabled = runArgs.isMultiProcess = false;
     runArgs.execCommand = (char **)NULL;
@@ -130,7 +130,7 @@ void option_handle(int argc, char **argv)
             if (strcmp("allow-multi-process", longOpts[longIndex].name) == 0)
             {
                 runArgs.isMultiProcess = true;
-            }            
+            }
             break;
         default:
             break;
@@ -195,46 +195,68 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
 	 * maxFileSize (MB)
 	 * maxStackSize (MB)
 	 */
-    if (maxMemory != -1)
+    if (maxMemory != 0)
+    {
         maxMemory *= (1 << 20);
+    }
     maxFileSize *= (1 << 20);
-    if (maxStackSize != -1)
+    if (maxStackSize != 0)
+    {
         maxStackSize *= (1 << 20);
+    }
     struct rlimit max_memory, max_cpu_time, max_process_num, max_file_size, max_stack, nocore;
-    if (maxMemory != -1)
+    if (maxMemory != 0)
+    {
         setrlimStruct(maxMemory, &max_memory);
-    if (maxCPUTime != -1)
+    }
+    if (maxCPUTime != 0)
+    {
         setrlimStruct(maxCPUTime, &max_cpu_time);
-    if (maxProcessNum != -1)
+    }
+    if (maxProcessNum != 0)
+    {
         setrlimStruct(maxProcessNum, &max_process_num);
+    }
     setrlimStruct(maxFileSize, &max_file_size);
-    if (maxStackSize != -1)
+    if (maxStackSize != 0)
+    {
         setrlimStruct(maxStackSize, &max_stack);
+    }
     setrlimStruct(0, &nocore);
-    if (maxMemory != -1)
+    
+    if (maxMemory != 0)
+    {
+        log("%lu\n", maxMemory);
         if (setrlimit(RLIMIT_AS, &max_memory) != 0)
         {
             errorExit(RLERR);
         }
-    if (maxCPUTime != -1)
+    }
+    if (maxCPUTime != 0)
+    {
         if (setrlimit(RLIMIT_CPU, &max_cpu_time) != 0)
         {
             errorExit(RLERR);
         }
-    if (maxProcessNum != -1)
+    }
+    if (maxProcessNum != 0)
+    {
         if (setrlimit(RLIMIT_NPROC, &max_process_num) != 0)
         {
             errorExit(RLERR);
         }
+    }
     if (setrlimit(RLIMIT_FSIZE, &max_file_size) != 0)
     {
         errorExit(RLERR);
     }
-    if (maxStackSize != -1)
+    if (maxStackSize != 0)
+    {
         if (setrlimit(RLIMIT_STACK, &max_stack) != 0)
         {
             errorExit(RLERR);
         }
+    }
     // set no core file:
     if (setrlimit(RLIMIT_CORE, &nocore) != 0)
     {
@@ -301,11 +323,11 @@ int main(int argc, char **argv)
         // child
 
         // 2. set rlimit
-        setLimit(runArgs.memLimit == -1 ? -1 : (runArgs.memLimit * 1.5),
-                 runArgs.timeLimit == -1 ? -1 : (int)((runArgs.timeLimit + 1000) / 1000),
-                 runArgs.isMultiProcess ? -1 : 1, 
-                 16, 
-                 runArgs.memLimit == -1 ? -1 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
+        setLimit(runArgs.memLimit == 0 ? 0 : (runArgs.memLimit * 1.5),
+                 runArgs.timeLimit == 0 ? 0 : (int)((runArgs.timeLimit + 1000) / 1000),
+                 runArgs.isMultiProcess ? 128 : 1,
+                 16,
+                 runArgs.memLimit == 0 ? 0 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
         // 3. redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
         // 4. chroot & setuid!
@@ -314,6 +336,13 @@ int main(int argc, char **argv)
         // 5. set uid & gid to nobody
         setNonPrivilegeUser();
 
+        char **f_envp = {NULL}, **f_argv = {NULL};
+        if (runArgs.isCommandEnabled)
+        {
+            f_argv = runArgs.execCommand;
+            chrootProg = runArgs.execCommand[0];
+        }
+
         while (!son_exec)
             ;
 
@@ -321,11 +350,6 @@ int main(int argc, char **argv)
         if (!runArgs.isSeccompDisabled)
             nativeProgRules(chrootProg);
         // 7. exec
-        char **f_envp = {NULL}, **f_argv = {NULL};
-        if (runArgs.isCommandEnabled) { // TODO
-            f_argv = runArgs.execCommand;
-            chrootProg = runArgs.execCommand[0];
-        }
         execv(chrootProg, f_argv);
         perror("exec error"); // unreachable normally
         return -1;
@@ -338,7 +362,8 @@ int main(int argc, char **argv)
         // 2. set timer
         signal(SIGALRM, killChild);
         struct itimerval itval;
-        if (runArgs.timeLimit != -1) {
+        if (runArgs.timeLimit != 0)
+        {
             itval.it_interval.tv_sec = itval.it_interval.tv_usec = 0; // only once
             itval.it_value.tv_sec = runArgs.timeLimit / 1000;
             itval.it_value.tv_usec = (runArgs.timeLimit % 1000 + 500) * 1000;
@@ -367,7 +392,8 @@ int main(int argc, char **argv)
             if (memory_now > memory_max)
             {
                 memory_max = memory_now;
-                if (memory_max > runArgs.memLimit * (1 << 20)) {
+                if (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 20))
+                {
                     killChild(SIGUSR1); // mem > limit
                 }
             }
@@ -379,7 +405,8 @@ int main(int argc, char **argv)
         timersub(&progEnd, &progStart, &useTime);
         int actualTime = timevalms(&useTime);
         remove(copyprogTo);
-        if (runArgs.copyBackFileName != NULL) {
+        if (runArgs.copyBackFileName != NULL)
+        {
             char *copyFrom = pathCat(chrootTmp, runArgs.copyBackFileName);
             // copyto TODO
             copyFile(copyFrom, runArgs.copyBackFileName);
@@ -408,7 +435,7 @@ int main(int argc, char **argv)
             {
                 puts("FSE");
             }
-            else if (memLimKilled || (runArgs.memLimit != -1 && memory_max > runArgs.memLimit * (1 << 10)))
+            else if (memLimKilled || (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 10)))
             {
                 puts("MLE");
             }
