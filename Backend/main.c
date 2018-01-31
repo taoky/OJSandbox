@@ -319,7 +319,7 @@ int main(int argc, char **argv)
     copyFile(runArgs.execFileName, copyprogTo);
     char *chrootProg = // pathCat("/tmp/", execFileBaseName);
                         execFileBaseName;
-
+    initUser();
     if (son < 0)
     {
         // fork failed
