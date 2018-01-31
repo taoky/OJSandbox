@@ -26,17 +26,17 @@
 #define FIERR "file error"
 #define FSERR "fstat() error"
 #define CPERR "sendfile() error"
-#define NBERR "nobody's gid or uid error"
+#define USERR "(User) ojs's gid or uid error"
 #define CGERR "cgroup error"
 #define SCERR "seccomp error"
 
-extern uid_t nobodyUID;
-extern gid_t nobodyGID;
+extern uid_t ojsUID;
+extern gid_t ojsGID;
 
 bool isRootUser(void);
 void errorExit(char str[]);
 void copyFile(char *from, char *to);
-void initNobody(void);
+void initUser(void);
 void setNonPrivilegeUser(void);
 char *pathCat(char *path, char *fileName);
 bool isPathLink(char *path);

@@ -1,7 +1,7 @@
 #include "util.h"
 
-uid_t nobodyUID = 0;
-gid_t nobodyGID = 0;
+uid_t ojsUID = 0;
+gid_t ojsGID = 0;
 
 bool isRootUser(void) {
 	return !(geteuid() || getegid());
@@ -34,26 +34,26 @@ void copyFile(char *from, char *to) {
 	close(fd_out);
 }
 
-void initNobody(void) {
-    // struct passwd *nobody = getpwnam("nobody");
-	// nobodyUID = nobody->pw_uid;
-	// nobodyGID = nobody->pw_gid;
-	// if (!nobodyUID || !nobodyGID) {
-	// 	errorExit(NBERR);
-	// }
-	nobodyUID = nobodyGID = 65534;
+void initUser(void) {
+    struct passwd *ojsuser = getpwnam("ojs");
+	ojsUID = ojsuser->pw_uid;
+	ojsGID = ojsuser->pw_gid;
+	if (!ojsUID || !ojsGID) {
+		errorExit(USERR);
+	}
+	// nobodyUID = nobodyGID = 65534;
 }
 
 void setNonPrivilegeUser(void) {
 	int status = 0;
-	if (nobodyGID == 0 || nobodyUID == 0) {
-		initNobody();
+	if (ojsGID == 0 || ojsUID == 0) {
+		initUser();
 	}
-	status = setgid(nobodyGID);
+	status = setgid(ojsGID);
 	if (status == -1) {
 		errorExit(GIERR);
 	}
-	status = setuid(nobodyUID);
+	status = setuid(ojsUID);
 	if (status == -1) {
 		errorExit(UIERR);
 	}

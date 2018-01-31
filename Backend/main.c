@@ -234,7 +234,6 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     
     if (maxMemory != 0)
     {
-        log("%lu\n", maxMemory);
         if (setrlimit(RLIMIT_AS, &max_memory) != 0)
         {
             errorExit(RLERR);
@@ -318,7 +317,8 @@ int main(int argc, char **argv)
     char *chrootTmp = pathCat(runArgs.chrootDir, "/tmp");
     char *copyprogTo = pathCat(chrootTmp, execFileBaseName);
     copyFile(runArgs.execFileName, copyprogTo);
-    char *chrootProg = pathCat("/tmp/", execFileBaseName);
+    char *chrootProg = // pathCat("/tmp/", execFileBaseName);
+                        execFileBaseName;
 
     if (son < 0)
     {

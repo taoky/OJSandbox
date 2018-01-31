@@ -24,7 +24,7 @@ cleanup() {
 	return 0
 }
 
-
+# useradd -s /usr/sbin/nologin -r -M -d /dev/null ojs
 
 if [ $UID -ne 0 ]; then
 	ERR "This program requires root"
@@ -63,6 +63,6 @@ do
 	mount -o ro,nosuid,bind "/$i" "$i"
 done
 
-OUT "${tmpDir}"
+OUT "The tmp dir: ${tmpDir}"
 
 
