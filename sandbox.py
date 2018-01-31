@@ -24,35 +24,42 @@ def executeProgram(command, **options):
     return JudgeResult(JudgeResult.OK)
 
 def executeProgramDocker(command, **options):
+    #TODO: Identify the temp directory
     running = langSupport.formatDockerHelper(command, **options)
-    options['encoding'] = 'utf-8'
-    cp = subprocess.run(command, **options)
+    print(running)
+    pwd = os.getcwd()
+    os.chdir(file.getRunDir())
+    cp = subprocess.run(running, stdout=subprocess.PIPE, universal_newlines=True)
+    os.chdir(pwd)
     res = cp.stdout.split('\n')
+    res = [' OK ']
     return JudgeResult(getattr(JudgeResult, res[0].strip()))
 
 def plainJudge(program, codeType, infile, outfile, **config):
     inRedir = file.inFileName
     outRedir = file.outFileName
-    copy(infile, inRedir)
-    istream = open(inRedir, 'r')
-    ostream = open(outRedir, 'w')
+    copy(infile, file.getRunDir() + inRedir)
+    #istream = open(inRedir, 'r')
+    #ostream = open(outRedir, 'w')
     files = {'in': inRedir, 'out': outRedir}
     #proFileName = os.path.splitext(i[0])[0]
     runHelper = langSupport.executeHelper[codeType]
     running = langSupport.formatHelper(runHelper, exefile=program)
-    runResult = executeProgramDocker(running, stdin=istream, stdout=ostream, timeout=config["timeout"] / 1000.0, src=program, memory=config['ram'])
+    #runResult = executeProgram(running, stdin=istream, stdout=ostream, timeout=config['timeout'] / 1000.0)
+    runResult = executeProgramDocker(running, src=program, stdin=inRedir, stdout=outRedir,
+        timeout=config['timeout'] / 1000.0, memory=config['ram'])
     rp = runResult.value
-    istream.close()
-    ostream.close()
+    #istream.close()
+    #ostream.close()
 
     forwardResults = [JudgeResult.RE, JudgeResult.TLE, JudgeResult.MLE, JudgeResult.FSE]
     if rp in forwardResults:
-        os.remove(inRedir)
-        os.remove(outRedir)
+        os.remove(file.getRunDir + inRedir)
+        os.remove(file.getRunDir + outRedir)
         return JudgeResult(rp)
 
     compareMethod = compare.getCompareMethod(config["compare"])
-    cp = compareMethod(outfile, outRedir)
+    cp = compareMethod(outfile, file.runDir + outRedir)
     os.remove(outRedir) # cleanup
     if cp == False:
         return JudgeResult(JudgeResult.WA)
@@ -60,7 +67,7 @@ def plainJudge(program, codeType, infile, outfile, **config):
 
 def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     # WARNING: IT IS UNSAFE NOW!
-    rsourceFileName = file.runDir + sourceFileName
+    rsourceFileName = file.getRunDir() + sourceFileName
     rsourceCodeName = directory + sourceFileName + sourceFileExt
     results = []
     
@@ -73,7 +80,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     
     cps = subprocess.run(compiling, bufsize=0, timeout=10)
     if cps.returncode != 0:
-        return JudgeError(JudgeResult.CE, res)
+        return JudgeError(JudgeResult.CE, results)
     proFiles = file.getProblemFiles(sourceFileName)
     firstError = None
     for i in proFiles:

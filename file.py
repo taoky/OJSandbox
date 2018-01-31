@@ -1,10 +1,32 @@
 import os
+import subprocess as sub
 import json
 
 workDir = './'
-runDir = 'run/'
-inFileName = runDir + 'in.tmp'
-outFileName = runDir + 'out.tmp'
+runDir = None
+initExe = 'Backend/init.sh'
+inFileName = 'in.tmp'
+outFileName = 'out.tmp'
+
+def getRunDir():
+    global runDir
+    if runDir == None:
+        try:
+            cp = sub.run([initExe], stdout=sub.PIPE, universal_newlines=True)
+        except FileNotFoundError:
+            raise
+        except:
+            # Not implemented yet
+            raise
+        if cp.returncode != 0:
+            # This may be a bit confusing but just use as a wordaround
+            raise FileNotFoundError("Failed to create workspace")
+        runDir = cp.stdout.strip()
+        if not os.path.isdir(runDir):
+            raise FileNotFoundError("Failed to create workspace")
+    if runDir[-1] != '/':
+        runDir += '/'
+    return runDir
 
 def removeHiddenFiles(li):
     return [i for i in li if not i.startswith('.')]

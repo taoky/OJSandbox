@@ -65,7 +65,7 @@ def formatDockerHelper(command, **args):
     res = dockerExe[:]
     for key in args:
         try:
-            arg = [i if i != '%' else arg[key] for i in dockerHelper[key]]
+            arg = [i if i != '%' else str(args[key]) for i in dockerHelper[key]]
             res += arg
         except KeyError:
             pass
