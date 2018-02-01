@@ -68,6 +68,7 @@ do
 	mount -o ro,nosuid,bind "/$i" "$i"
 done
 
+echo -n "grant { };" > etc/java.policy
 OUT "The tmp dir: ${tmpDir}"
 
 
