@@ -10,7 +10,7 @@ main: $(OBJS)
 	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $^
 
 %.o: %.c
-	${CC} ${CFLAGS} -o $@ $^
+	${CC} ${CFLAGS} -c -o $@ $^
 
 clean:
 	rm -f main $(OBJS)
