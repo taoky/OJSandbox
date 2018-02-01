@@ -22,6 +22,7 @@ struct runArgs_t
     bool isSeccompDisabled; // --disable-seccomp, optional
     bool isCommandEnabled;  // --exec-command
     bool isMultiProcess;    // --allow-multi-process
+    bool isMemLimitRSS;     // --mem-rss-only
 } runArgs;
 
 static const char *optString = "+c:e:i:o:t:m:l:h?";
@@ -39,14 +40,15 @@ static const struct option longOpts[] = {
     {"copy-back", required_argument, NULL, 0},
     {"allow-multi-process", no_argument, NULL, 0},
     {"exec-stderr", required_argument, NULL, 0},
+    {"mem-rss-only", no_argument, NULL, 0},
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
 void display_help(char *a0)
 {
     log("This is the backend of the sandbox for oj.\n");
-    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
-    log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
+    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
+    log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
     log("--chroot-dir or -c: The directory that will be chroot(2)ed in.\n");
     log("--exec-file or -e: The program (or source file) that will be executed or interpreted.\n");
     log("--exec-command: (Optional) Enable the function to run command after '--'.\n");
@@ -59,6 +61,7 @@ void display_help(char *a0)
     log("--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.\n");
     log("--allow-multi-process: (Optional) change process number limitation from 1 to 128.\n");
     log("--exec-stderr: (Optional) This file will be the output (stderr) of the executed program.\n");
+    log("--mem-rss-only: (Optional) Limit RSS (Resident Set Size) memory only, if --mem-limit is on\n.");
     log("--help or -h: (Optional) This will show this message.\n");
     exit(0);
 }
@@ -68,7 +71,7 @@ void option_handle(int argc, char **argv)
     // init runArgs
     runArgs.timeLimit = runArgs.memLimit = 0;
     runArgs.chrootDir = runArgs.execFileName = runArgs.copyBackFileName = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
-    runArgs.isSeccompDisabled = runArgs.isCommandEnabled = runArgs.isMultiProcess = false;
+    runArgs.isSeccompDisabled = runArgs.isCommandEnabled = runArgs.isMultiProcess = runArgs.isMemLimitRSS = false;
     runArgs.execCommand = (char **)NULL;
     runArgs.execStderr = NULL;
     int longIndex;
@@ -139,6 +142,10 @@ void option_handle(int argc, char **argv)
             {
                 runArgs.execStderr = optarg;
             }
+            if (strcmp("mem-rss-only", longOpts[longIndex].name) == 0)
+            {
+                runArgs.isMemLimitRSS = true;
+            }
             break;
         default:
             break;
@@ -168,6 +175,11 @@ void option_handle(int argc, char **argv)
     if (runArgs.chrootDir == NULL || runArgs.execFileName == NULL || runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
     {
         log("Missing argument(s).\nUse %s -h or %s --help to get help.\n", argv[0], argv[0]);
+        exit(-1);
+    }
+    if (runArgs.isMemLimitRSS && runArgs.memLimit == 0)
+    {
+        log("Missing --mem-limit when --mem-rss-only is on.\n");
         exit(-1);
     }
 }
@@ -331,11 +343,11 @@ int main(int argc, char **argv)
         // child
 
         // 2. set rlimit
-        setLimit(runArgs.memLimit == 0 ? 0 : (runArgs.memLimit * 1.5),
+        setLimit(runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5),
                  runArgs.timeLimit == 0 ? 0 : (int)((runArgs.timeLimit + 1000) / 1000),
                  runArgs.isMultiProcess ? 128 : 1,
                  16,
-                 runArgs.memLimit == 0 ? 0 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
+                 runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
         // 3. redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
 
@@ -390,22 +402,39 @@ int main(int argc, char **argv)
         // 4. wait & cleanup
         struct rusage sonUsage;
         int status;
-        unsigned long memory_max = 0, memory_now = 0;
+        unsigned long memory_max = 0, memory_now = 0; // virt mem
+        unsigned long rss_memory_max = 0, rss_memory_now = 0; // rss mem
+        int pagesize = getpagesize();
         while (wait3(&status, WUNTRACED | WNOHANG, &sonUsage) == 0)
         {
             FILE *procFile = fopen(procStat, "r");
             if (procFile)
             {
                 // prevent segfault
-                fscanf(procFile, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %lu", &memory_now);
+                fscanf(procFile, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %lu %lu", &memory_now, &rss_memory_now);
                 fclose(procFile);
             }
-            if (memory_now > memory_max)
+            if (!runArgs.isMemLimitRSS)
             {
-                memory_max = memory_now;
-                if (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 20))
+                if (memory_now > memory_max)
                 {
-                    killChild(SIGUSR1); // mem > limit
+                    memory_max = memory_now;
+                    if (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 20))
+                    {
+                        killChild(SIGUSR1); // mem > limit
+                    }
+                }
+            }
+            else 
+            {
+                rss_memory_now *= pagesize / (1 << 10);
+                if (rss_memory_now > rss_memory_max)
+                {
+                    rss_memory_max = rss_memory_now;
+                    if (runArgs.memLimit != 0 && rss_memory_max > runArgs.memLimit * (1 << 10))
+                    {
+                        killChild(SIGUSR1);
+                    }
                 }
             }
         }
@@ -460,7 +489,7 @@ int main(int argc, char **argv)
             killChild(WSTOPSIG(status));
             puts("RE");
         }
-        printf("%d %lu %d %ld\n", actualTime, memory_max, cpuTime, maxrss);
+        printf("%d %lu %d %ld %lu\n", actualTime, memory_max, cpuTime, maxrss, rss_memory_max);
         // free(runArgs.execCommand);
     }
 
