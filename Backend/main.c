@@ -440,7 +440,7 @@ int main(int argc, char **argv)
         }
         memory_max /= (1 << 10); // accurate virt usage
         int cpuTime = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
-        long maxrss = sonUsage.ru_maxrss; // may be required in Java?
+        // long maxrss = sonUsage.ru_maxrss; // may be required in Java?
         gettimeofday(&progEnd, NULL);
         timersub(&progEnd, &progStart, &useTime);
         int actualTime = timevalms(&useTime);
@@ -489,7 +489,7 @@ int main(int argc, char **argv)
             killChild(WSTOPSIG(status));
             puts("RE");
         }
-        printf("%d %lu %d %ld %lu\n", actualTime, memory_max, cpuTime, maxrss, rss_memory_max);
+        printf("%d %lu %d %lu\n", actualTime, memory_max, cpuTime, rss_memory_max);
         // free(runArgs.execCommand);
     }
 
