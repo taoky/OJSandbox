@@ -2,6 +2,7 @@
 
 all: main
 
+CC := gcc
 CFLAGS := -O3 -Wall -s
 LDFLAGS := -lseccomp
 OBJS = main.o secrules.o util.o

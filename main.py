@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import os
+import sys
 import sandbox
 import file
 import langSupport
 from judge import JudgeResult
 
-if __name__ == '__main__':
+def OJRun():
     lPlayers = file.listOfPlayers()
     lProblems = file.listOfProblems()
 
@@ -30,3 +31,12 @@ if __name__ == '__main__':
             config = file.loadProblemConfig(filename)
             res = sandbox.safeJudge(filename, fileExtension, relaPath, config)
             print('{} on {}: {}'.format(thisPlayer, config['title'], res))
+
+def OJReset():
+    file.cleanupWorkspace()
+
+if __name__ == '__main__':
+    if len(sys.argv) >= 2:
+        if sys.argv[1] == 'cleanup':
+            OJReset()
+    OJRun()

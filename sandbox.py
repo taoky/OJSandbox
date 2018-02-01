@@ -29,14 +29,11 @@ def executeProgramDocker(command, **options):
     running = langSupport.formatDockerHelper(command, **options)
     pwd = os.getcwd()
     os.chdir(file.getRunDir())
-    print(os.getcwd())
-    print(' '.join(running))
-    cp = subprocess.run(running, stdout=subprocess.PIPE, universal_newlines=True)
+    cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     os.chdir(pwd)
     res = cp.stdout.split('\n')
-    print(res)
     if cp.returncode != 0:
-        print('docker error')
+        print(cp.stderr)
         res[0] = 'IE'
     return JudgeResult(getattr(JudgeResult, res[0].strip()))
 
@@ -74,19 +71,22 @@ def plainJudge(program, codeType, infile, outfile, **config):
 
 def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     # WARNING: IT IS UNSAFE NOW!
-    rsourceFileName = file.getRunDir() + sourceFileName
+    exefileName = 'out'
+    rsourceFileName = file.getRunDir() + exefileName
     rsourceCodeName = directory + sourceFileName + sourceFileExt
     results = []
     
     # os.system(compileHelper[sourceFileExt] % (rsourceCodeName, rsourceFileName))
     try:
         compileHelper = langSupport.compileHelper[sourceFileExt.lower()]
-        compiling = langSupport.formatHelper(compileHelper, infile=rsourceCodeName, outfile=rsourceFileName)
+        #compiling = langSupport.formatHelper(compileHelper, infile=rsourceCodeName, outfile=rsourceFileName)
+        compiling = langSupport.formatHelper(compileHelper, infile=sourceFileName+sourceFileExt, outfile=exefileName)
     except KeyError as e:
         return JudgeError(JudgeResult.FTE)
     
-    cps = subprocess.run(compiling, bufsize=0, timeout=10)
-    if cps.returncode != 0:
+    #cps = subprocess.run(compiling, bufsize=0, timeout=10)
+    cps = executeProgramDocker(compiling, dir=file.runDir, src=os.getcwd() + '/' + rsourceCodeName, stdin='/dev/null', stdout='/dev/null', timeout=5000, memory=128, noseccomp=None, multiprocess=None, copyback=exefileName)
+    if not JudgeResult.isOK(cps.value):
         return JudgeError(JudgeResult.CE, results)
     proFiles = file.getProblemFiles(sourceFileName)
     firstError = None
