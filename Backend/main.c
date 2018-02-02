@@ -9,20 +9,20 @@ bool memLimKilled = false;
 
 struct runArgs_t
 {
-    char *chrootDir;        // --chroot-dir
-    char *execFileName;     // --exec-file
-    char **execCommand;     // after '--'
-    char *inputFileName;    // --input
-    char *outputFileName;   // --output
-    char *logFileName;      // --log, optional
-    char *copyBackFileName; // --copy-back, optional (compile)
-    char *execStderr;       // --exec-stderr, optional
-    unsigned long timeLimit;// --time-limit
-    unsigned long memLimit; // --mem-limit
-    bool isSeccompDisabled; // --disable-seccomp, optional
-    bool isCommandEnabled;  // --exec-command
-    bool isMultiProcess;    // --allow-multi-process
-    bool isMemLimitRSS;     // --mem-rss-only
+    char *chrootDir;         // --chroot-dir
+    char *execFileName;      // --exec-file
+    char **execCommand;      // after '--'
+    char *inputFileName;     // --input
+    char *outputFileName;    // --output
+    char *logFileName;       // --log, optional
+    char *copyBackFileName;  // --copy-back, optional (compile)
+    char *execStderr;        // --exec-stderr, optional
+    unsigned long timeLimit; // --time-limit
+    unsigned long memLimit;  // --mem-limit
+    bool isSeccompDisabled;  // --disable-seccomp, optional
+    bool isCommandEnabled;   // --exec-command
+    bool isMultiProcess;     // --allow-multi-process
+    bool isMemLimitRSS;      // --mem-rss-only
 } runArgs;
 
 static const char *optString = "+c:e:i:o:t:m:l:h?";
@@ -243,7 +243,7 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
         setrlimStruct(maxStackSize, &max_stack);
     }
     setrlimStruct(0, &nocore);
-    
+
     if (maxMemory != 0)
     {
         if (setrlimit(RLIMIT_AS, &max_memory) != 0)
@@ -315,14 +315,16 @@ int main(int argc, char **argv)
 {
     if (!isRootUser())
     {
-        log("This program requires root user!\n");
+        log("This program requires root user.\n");
         exit(-1);
     }
     option_handle(argc, argv);
     logRedirect(runArgs.logFileName);
     signal(SIGUSR1, ready);
-    son_exec = 0;
-    son = fork();
+
+    char *current_dir = get_current_dir_name();
+    log("%s\n", current_dir);
+    free(current_dir);
 
     char *execFileBaseName = basename(runArgs.execFileName);
     // 1. copy prog
@@ -330,8 +332,10 @@ int main(int argc, char **argv)
     char *copyprogTo = pathCat(chrootTmp, execFileBaseName);
     copyFile(runArgs.execFileName, copyprogTo);
     char *chrootProg = // pathCat("/tmp/", execFileBaseName);
-                        execFileBaseName;
+        execFileBaseName;
     initUser();
+    son_exec = 0;
+    son = fork();
     if (son < 0)
     {
         // fork failed
@@ -402,7 +406,7 @@ int main(int argc, char **argv)
         // 4. wait & cleanup
         struct rusage sonUsage;
         int status;
-        unsigned long memory_max = 0, memory_now = 0; // virt mem
+        unsigned long memory_max = 0, memory_now = 0;         // virt mem
         unsigned long rss_memory_max = 0, rss_memory_now = 0; // rss mem
         int pagesize = getpagesize();
         while (wait3(&status, WUNTRACED | WNOHANG, &sonUsage) == 0)
@@ -425,7 +429,7 @@ int main(int argc, char **argv)
                     }
                 }
             }
-            else 
+            else
             {
                 rss_memory_now *= pagesize / (1 << 10);
                 if (rss_memory_now > rss_memory_max)
