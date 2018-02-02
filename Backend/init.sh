@@ -59,7 +59,7 @@ mknod dev/urandom c 1 9
 chmod $MODE1 dev/null dev/urandom
 mount -o bind /dev/null dev/null
 mount -o bind /dev/urandom dev/urandom
-mount -o size=16m,nr_inodes=4k,nosuid -t tmpfs tmp tmp
+mount -o size=24m,nr_inodes=4k,nosuid -t tmpfs tmp tmp
 
 for i in bin etc/alternatives lib lib64 usr/bin usr/include usr/lib usr/share #usr/lib64 usr/libexec
 do
