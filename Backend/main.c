@@ -9,7 +9,7 @@ bool memLimKilled = false;
 
 struct runArgs_t
 {
-    char *chrootDir;         // --chroot-dir
+    char *tmpDir;            // --tmp-dir
     char *execFileName;      // --exec-file
     char **execCommand;      // after '--'
     char *inputFileName;     // --input
@@ -25,10 +25,10 @@ struct runArgs_t
     bool isMemLimitRSS;      // --mem-rss-only
 } runArgs;
 
-static const char * const optString = "+c:e:i:o:t:m:l:h?";
+static const char *const optString = "+d:e:i:o:t:m:l:h?";
 
 static const struct option longOpts[] = {
-    {"chroot-dir", required_argument, NULL, 'c'},
+    {"tmp-dir", required_argument, NULL, 'd'},
     {"exec-file", required_argument, NULL, 'e'},
     {"exec-command", no_argument, NULL, 0},
     {"input", required_argument, NULL, 'i'},
@@ -47,9 +47,9 @@ static const struct option longOpts[] = {
 void display_help(const char *a0)
 {
     log("This is the backend of the sandbox for oj.\n");
-    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
-    log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
-    log("--chroot-dir or -c: The directory that will be chroot(2)ed in.\n");
+    log("Usage: %s -d path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
+    log("or: %s --tmp-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
+    log("--tmp-dir or -d: (Optional, run at current working directory at default) The directory that the program will be run in.\n");
     log("--exec-file or -e: The program (or source file) that will be executed or interpreted.\n");
     log("--exec-command: (Optional) Enable the function to run command after '--'.\n");
     log("--input or -i: The file that will be the input source.\n");
@@ -70,7 +70,7 @@ void option_handle(int argc, char **argv)
 {
     // init runArgs
     runArgs.timeLimit = runArgs.memLimit = 0;
-    runArgs.chrootDir = runArgs.execFileName = runArgs.copyBackFileName = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
+    runArgs.tmpDir = runArgs.execFileName = runArgs.copyBackFileName = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
     runArgs.isSeccompDisabled = runArgs.isCommandEnabled = runArgs.isMultiProcess = runArgs.isMemLimitRSS = false;
     runArgs.execCommand = (char **)NULL;
     runArgs.execStderr = NULL;
@@ -82,8 +82,8 @@ void option_handle(int argc, char **argv)
     {
         switch (opt)
         {
-        case 'c':
-            runArgs.chrootDir = optarg;
+        case 'd':
+            runArgs.tmpDir = optarg;
             break;
         case 'e':
             runArgs.execFileName = optarg;
@@ -161,7 +161,7 @@ void option_handle(int argc, char **argv)
         runArgs.execCommand = argv + optind;
     }
     // check
-    if (runArgs.chrootDir == NULL || runArgs.execFileName == NULL || runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
+    if (runArgs.execFileName == NULL || runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
     {
         log("Missing argument(s).\nUse %s -h or %s --help to get help.\n", argv[0], argv[0]);
         exit(-1);
@@ -169,6 +169,11 @@ void option_handle(int argc, char **argv)
     if (runArgs.isMemLimitRSS && runArgs.memLimit == 0)
     {
         log("Missing --mem-limit when --mem-rss-only is on.\n");
+        exit(-1);
+    }
+    if (runArgs.copyBackFileName && !runArgs.tmpDir)
+    {
+        log("--copy-back requires --tmp-dir.\n");
         exit(-1);
     }
 }
@@ -297,7 +302,7 @@ void logRedirect(char logpath[])
     if (logpath != NULL)
     {
         FILE *log_file = fopen(logpath, "w");
-        if (log_file == NULL) 
+        if (log_file == NULL)
         {
             errorExit(FIERR);
         }
@@ -319,16 +324,14 @@ int main(int argc, char **argv)
     logRedirect(runArgs.logFileName);
     signal(SIGUSR1, ready);
 
-/*     char *current_dir = get_current_dir_name();
-    log("%s\n", current_dir);
-    free(current_dir); */
-
     char *execFileBaseName = basename(runArgs.execFileName);
-    // 1. copy prog
-    char *chrootTmp = pathCat(runArgs.chrootDir, "/tmp");
-    char *copyprogTo = pathCat(chrootTmp, execFileBaseName);
-    copyFile(runArgs.execFileName, copyprogTo);
-    char *chrootProg = execFileBaseName;
+    char *finalExecName = NULL;
+    if (runArgs.tmpDir)
+    {
+        finalExecName = pathCat(runArgs.tmpDir, execFileBaseName);
+        copyFile(runArgs.execFileName, finalExecName);
+    }
+    char *execProg = execFileBaseName;
     initUser();
     son_exec = 0;
     son = fork();
@@ -352,17 +355,15 @@ int main(int argc, char **argv)
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
 
         logRedirect(runArgs.execStderr);
-        // chroot
-        chroot(runArgs.chrootDir);
-        chdir("/tmp");
-        // set uid & gid to nobody
+        chdir(runArgs.tmpDir);
+        // set uid & gid to user 'ojs'
         setNonPrivilegeUser();
 
-        char /* **f_envp = {NULL},*/ **f_argv = {NULL};
+        char **f_argv = {NULL};
         if (runArgs.isCommandEnabled)
         {
             f_argv = runArgs.execCommand;
-            chrootProg = runArgs.execCommand[0];
+            execProg = runArgs.execCommand[0];
         }
 
         while (!son_exec)
@@ -370,10 +371,10 @@ int main(int argc, char **argv)
 
         // load seccomp rule
         if (!runArgs.isSeccompDisabled)
-            whiteListProgRules(chrootProg);
+            whiteListProgRules(execProg);
         // exec
         log("=== PROG START ===\n");
-        execv(chrootProg, f_argv);
+        execv(execProg, f_argv);
         perror("exec error"); // unreachable normally
         return -1;
     }
@@ -444,10 +445,14 @@ int main(int argc, char **argv)
         gettimeofday(&progEnd, NULL);
         timersub(&progEnd, &progStart, &useTime);
         int actualTime = timevalms(&useTime);
-        remove(copyprogTo);
+        if (runArgs.tmpDir)
+        {
+            remove(finalExecName);
+            free(finalExecName);
+        }
         if (runArgs.copyBackFileName != NULL)
         {
-            char *copyFrom = pathCat(chrootTmp, runArgs.copyBackFileName);
+            char *copyFrom = pathCat(runArgs.tmpDir, runArgs.copyBackFileName);
             // copyto TODO
             copyFile(copyFrom, runArgs.copyBackFileName);
             free(copyFrom);
@@ -491,9 +496,6 @@ int main(int argc, char **argv)
             puts(RES_RE);
         }
         printf("%d %lu %d %lu\n", actualTime, memory_max, cpuTime, rss_memory_max);
-
-        free(chrootTmp);
-        free(copyprogTo);
     }
 
     return 0;

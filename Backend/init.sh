@@ -14,13 +14,6 @@ ERR() {
 
 cleanup() {
 	for i in /tmp/ojs-*; do
-		for j in $i/dev/* $i/usr/* $i/etc/*; do
-			umount "$j"
-		done
-		for j in $i/*; do
-			umount "$j"
-		done
-		umount "$i"
 		rm -rf "$i"
 	done
 	return 0
@@ -51,26 +44,8 @@ fi
 chmod $MODE0 "$tmpDir"
 cd "$tmpDir"
 
-mkdir -p proc dev tmp
-chmod $MODE0 proc dev tmp
-
-mount -t proc -o nosuid proc proc
-mknod dev/null c 1 3
-mknod dev/urandom c 1 9
-chmod $MODE1 dev/null dev/urandom
-mount -o bind /dev/null dev/null
-mount -o bind /dev/urandom dev/urandom
-mount -o size=24m,nr_inodes=4k,nosuid -t tmpfs tmp tmp
-
-for i in bin etc/alternatives lib lib64 usr/bin usr/include usr/lib usr/share #usr/lib64 usr/libexec
-do
-	mkdir -p "$i"
-	chmod $MODE0 "$i"
-	mount -o ro,nosuid,bind "/$i" "$i"
-done
-
-echo -n "grant { };" > etc/java.policy
-chmod $MODE2 etc/java.policy
+echo -n "grant { };" > /etc/java.policy
+chmod $MODE2 /etc/java.policy
 OUT "The tmp dir: ${tmpDir}"
 
 
