@@ -288,6 +288,10 @@ void fileRedirect(char inputpath[], char outputpath[])
     /* redirect stdin & stdout */
     FILE *input_file = fopen(inputpath, "r");
     FILE *output_file = fopen(outputpath, "w");
+    if (input_file == NULL || output_file == NULL)
+    {
+        errorExit(FIERR);
+    }
     if (dup2(fileno(input_file), fileno(stdin)) == -1)
     {
         errorExit(RDERR);
@@ -304,6 +308,10 @@ void logRedirect(char logpath[])
     if (logpath != NULL)
     {
         FILE *log_file = fopen(logpath, "w");
+        if (log_file == NULL) 
+        {
+            errorExit(FIERR);
+        }
         if (dup2(fileno(log_file), fileno(stderr)) == -1)
         {
             errorExit(RDERR);
