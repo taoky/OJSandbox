@@ -45,11 +45,6 @@ void copyFile(const char *from, const char *to);
 void initUser(void);
 void setNonPrivilegeUser(void);
 char *pathCat(const char *path, const char *fileName);
-/* bool isPathLink(const char *path);
-bool isPathDir(const char *path);
-long long readFileLL(const char *path);
-int writeFileInt(const char *path, int value, bool isOverWrite);
-bool clearFile(const char *path); */
 int timevalms(const struct timeval *timev);
 void setrlimStruct(rlim_t num, struct rlimit * st);
 bool writeFileStr(const char *path, const char *value, bool isOverWrite);

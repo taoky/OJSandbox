@@ -158,17 +158,6 @@ void option_handle(int argc, char **argv)
             log("Missing command. Remember to add your command after '--'!\n");
             exit(-1);
         }
-        // int comLen = 0;
-        // for (int i = optind; i < argc; i++) {
-        //     comLen += strlen(argv[i]) + 1;
-        // }
-        // runArgs.execCommand = malloc(comLen);
-        // for (int i = optind; i < argc; i++) {
-        //     strcat(runArgs.execCommand, argv[i]);
-        //     if (i != argc - 1)
-        //         strcat(runArgs.execCommand, " ");
-        // }
-        // log("Your command: %s\n", runArgs.execCommand);
         runArgs.execCommand = argv + optind;
     }
     // check
@@ -330,17 +319,16 @@ int main(int argc, char **argv)
     logRedirect(runArgs.logFileName);
     signal(SIGUSR1, ready);
 
-    char *current_dir = get_current_dir_name();
+/*     char *current_dir = get_current_dir_name();
     log("%s\n", current_dir);
-    free(current_dir);
+    free(current_dir); */
 
     char *execFileBaseName = basename(runArgs.execFileName);
     // 1. copy prog
     char *chrootTmp = pathCat(runArgs.chrootDir, "/tmp");
     char *copyprogTo = pathCat(chrootTmp, execFileBaseName);
     copyFile(runArgs.execFileName, copyprogTo);
-    char *chrootProg = // pathCat("/tmp/", execFileBaseName);
-        execFileBaseName;
+    char *chrootProg = execFileBaseName;
     initUser();
     son_exec = 0;
     son = fork();
@@ -354,20 +342,20 @@ int main(int argc, char **argv)
     {
         // child
 
-        // 2. set rlimit
+        // set rlimit
         setLimit(runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5),
                  runArgs.timeLimit == 0 ? 0 : (int)((runArgs.timeLimit + 1000) / 1000),
                  runArgs.isMultiProcess ? 128 : 1,
                  16,
                  runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
-        // 3. redirect stdin & stdout
+        // redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
 
         logRedirect(runArgs.execStderr);
-        // 4. chroot & setuid!
+        // chroot
         chroot(runArgs.chrootDir);
         chdir("/tmp");
-        // 5. set uid & gid to nobody
+        // set uid & gid to nobody
         setNonPrivilegeUser();
 
         char /* **f_envp = {NULL},*/ **f_argv = {NULL};
@@ -380,10 +368,10 @@ int main(int argc, char **argv)
         while (!son_exec)
             ;
 
-        // 6. load seccomp rule
+        // load seccomp rule
         if (!runArgs.isSeccompDisabled)
-            nativeProgRules(chrootProg);
-        // 7. exec
+            whiteListProgRules(chrootProg);
+        // exec
         log("=== PROG START ===\n");
         execv(chrootProg, f_argv);
         perror("exec error"); // unreachable normally
@@ -394,7 +382,7 @@ int main(int argc, char **argv)
         // parent
         char procStat[12 + 10] = {};
         sprintf(procStat, "/proc/%d/stat", son);
-        // 2. set timer
+        // set timer
         signal(SIGALRM, killChild);
         struct itimerval itval;
         if (runArgs.timeLimit != 0)
@@ -409,9 +397,9 @@ int main(int argc, char **argv)
         }
         struct timeval progStart, progEnd, useTime;
         gettimeofday(&progStart, NULL);
-        // 3. call son to exec
+        // call son to exec
         kill(son, SIGUSR1);
-        // 4. wait & cleanup
+        // wait & cleanup
         struct rusage sonUsage;
         int status;
         unsigned long memory_max = 0, memory_now = 0;         // virt mem
@@ -452,7 +440,7 @@ int main(int argc, char **argv)
         }
         memory_max /= (1 << 10); // accurate virt usage
         int cpuTime = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
-        // long maxrss = sonUsage.ru_maxrss; // may be required in Java?
+        // long maxrss = sonUsage.ru_maxrss;
         gettimeofday(&progEnd, NULL);
         timersub(&progEnd, &progStart, &useTime);
         int actualTime = timevalms(&useTime);
@@ -462,6 +450,7 @@ int main(int argc, char **argv)
             char *copyFrom = pathCat(chrootTmp, runArgs.copyBackFileName);
             // copyto TODO
             copyFile(copyFrom, runArgs.copyBackFileName);
+            free(copyFrom);
         }
         itval.it_value.tv_sec = itval.it_value.tv_usec = 0; // stop timer
         if (WIFEXITED(status))
@@ -502,7 +491,9 @@ int main(int argc, char **argv)
             puts(RES_RE);
         }
         printf("%d %lu %d %lu\n", actualTime, memory_max, cpuTime, rss_memory_max);
-        // free(runArgs.execCommand);
+
+        free(chrootTmp);
+        free(copyprogTo);
     }
 
     return 0;

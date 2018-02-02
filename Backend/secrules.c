@@ -13,15 +13,9 @@ static int trusted_syscalls[] = {
     SCMP_SYS(fcntl) // python3
 };
 
-// static int blocked_syscalls[] = {
-//     SCMP_SYS(fork), SCMP_SYS(kill), SCMP_SYS(clone),
-//     SCMP_SYS(prctl), SCMP_SYS(seccomp), SCMP_SYS(vfork),
-//     SCMP_SYS(clone)
-// }
-
-void nativeProgRules(const char *progExec)
+void whiteListProgRules(const char *progExec)
 {
-    // native program (C/C++): whitelist
+    // whitelist
     int trusted_len = sizeof(trusted_syscalls) / sizeof(int);
     // scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);
     scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_ERRNO(1));
