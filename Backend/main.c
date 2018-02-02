@@ -25,7 +25,7 @@ struct runArgs_t
     bool isMemLimitRSS;      // --mem-rss-only
 } runArgs;
 
-static const char *optString = "+c:e:i:o:t:m:l:h?";
+static const char * const optString = "+c:e:i:o:t:m:l:h?";
 
 static const struct option longOpts[] = {
     {"chroot-dir", required_argument, NULL, 'c'},
@@ -44,7 +44,7 @@ static const struct option longOpts[] = {
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
-void display_help(char *a0)
+void display_help(const char *a0)
 {
     log("This is the backend of the sandbox for oj.\n");
     log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
@@ -469,11 +469,11 @@ int main(int argc, char **argv)
             int ret = WEXITSTATUS(status);
             if (ret == 0)
             {
-                puts("OK");
+                puts(RES_OK);
             }
             else
             {
-                puts("RE");
+                puts(RES_RE);
             }
         }
         else if (WIFSIGNALED(status))
@@ -481,25 +481,25 @@ int main(int argc, char **argv)
             int sig = WTERMSIG(status);
             if (killedByTimer || sig == SIGXCPU)
             {
-                puts("TLE");
+                puts(RES_TLE);
             }
             else if (sig == SIGXFSZ)
             {
-                puts("FSE");
+                puts(RES_FSE);
             }
             else if (memLimKilled || (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 10)))
             {
-                puts("MLE");
+                puts(RES_MLE);
             }
             else
             {
-                puts("RE");
+                puts(RES_RE);
             }
         }
         else if (WIFSTOPPED(status))
         {
             killChild(WSTOPSIG(status));
-            puts("RE");
+            puts(RES_RE);
         }
         printf("%d %lu %d %lu\n", actualTime, memory_max, cpuTime, rss_memory_max);
         // free(runArgs.execCommand);

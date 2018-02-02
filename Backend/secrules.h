@@ -3,6 +3,6 @@
 
 #include <seccomp.h>
 
-void nativeProgRules(char *progExec);
+void nativeProgRules(const char *progExec);
 
 #endif

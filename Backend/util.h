@@ -15,37 +15,43 @@
 #include <fcntl.h>
 #include <pwd.h>
 
-#define RLERR "rlimit error"
-#define GIERR "set gid error"
-#define UIERR "set uid error"
-#define RDERR "file descriptor redirect error"
-#define FOERR "fork() error"
-#define SGERR "sigaction() error"
-#define EXERR "exec error"
-#define TPERR "mkdtemp() error"
-#define FIERR "file error"
-#define FSERR "fstat() error"
-#define CPERR "sendfile() error"
-#define USERR "(User) ojs's gid or uid error"
-#define CGERR "cgroup error"
-#define SCERR "seccomp error"
+extern const char *const RLERR;
+extern const char *const GIERR;
+extern const char *const UIERR;
+extern const char *const RDERR;
+extern const char *const FOERR;
+extern const char *const SGERR;
+extern const char *const EXERR;
+extern const char *const TPERR;
+extern const char *const FIERR;
+extern const char *const FSERR;
+extern const char *const CPERR;
+extern const char *const USERR;
+extern const char *const CGERR;
+extern const char *const SCERR;
+
+extern const char *const RES_OK;
+extern const char *const RES_RE;
+extern const char *const RES_TLE;
+extern const char *const RES_FSE;
+extern const char *const RES_MLE;
 
 extern uid_t ojsUID;
 extern gid_t ojsGID;
 
 bool isRootUser(void);
-void errorExit(char str[]);
-void copyFile(char *from, char *to);
+void errorExit(const char *str);
+void copyFile(const char *from, const char *to);
 void initUser(void);
 void setNonPrivilegeUser(void);
-char *pathCat(char *path, char *fileName);
-/* bool isPathLink(char *path);
-bool isPathDir(char *path);
-long long readFileLL(char *path);
-int writeFileInt(char *path, int value, bool isOverWrite);
-bool clearFile(char *path); */
+char *pathCat(const char *path, const char *fileName);
+/* bool isPathLink(const char *path);
+bool isPathDir(const char *path);
+long long readFileLL(const char *path);
+int writeFileInt(const char *path, int value, bool isOverWrite);
+bool clearFile(const char *path); */
 int timevalms(const struct timeval *timev);
 void setrlimStruct(rlim_t num, struct rlimit * st);
-bool writeFileStr(char *path, char *value, bool isOverWrite);
+bool writeFileStr(const char *path, const char *value, bool isOverWrite);
 
 #endif

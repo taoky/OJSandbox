@@ -19,7 +19,7 @@ static int trusted_syscalls[] = {
 //     SCMP_SYS(clone)
 // }
 
-void nativeProgRules(char *progExec)
+void nativeProgRules(const char *progExec)
 {
     // native program (C/C++): whitelist
     int trusted_len = sizeof(trusted_syscalls) / sizeof(int);

@@ -3,16 +3,37 @@
 uid_t ojsUID = 0;
 gid_t ojsGID = 0;
 
+const char *const RLERR = "rlimit error";
+const char *const GIERR = "set gid error";
+const char *const UIERR = "set uid error";
+const char *const RDERR = "file descriptor redirect error";
+const char *const FOERR = "fork() error";
+const char *const SGERR = "sigaction() error";
+const char *const EXERR = "exec error";
+const char *const TPERR = "mkdtemp() error";
+const char *const FIERR = "file error";
+const char *const FSERR = "fstat() error";
+const char *const CPERR = "sendfile() error";
+const char *const USERR = "(User) ojs's gid or uid error";
+const char *const CGERR = "cgroup error";
+const char *const SCERR = "seccomp error";
+
+const char *const RES_OK = "OK";
+const char *const RES_RE = "RE";
+const char *const RES_TLE = "TLE";
+const char *const RES_FSE = "FSE";
+const char *const RES_MLE = "MLE";
+
 bool isRootUser(void) {
 	return !(geteuid() || getegid());
 }
 
-void errorExit(char str[]) {
+void errorExit(const char *str) {
 	perror(str);
 	exit(-1);
 }
 
-void copyFile(char *from, char *to) {
+void copyFile(const char *from, const char *to) {
 	int fd_in, fd_out;
 	struct stat st;
 	off_t offset = 0;
@@ -62,7 +83,7 @@ void setNonPrivilegeUser(void) {
 	}
 }
 
-char *pathCat(char *path, char *fileName) {
+char *pathCat(const char *path, const char *fileName) {
 	/*
 	 * dynamic alloc memory
      * free when necessary
@@ -75,7 +96,7 @@ char *pathCat(char *path, char *fileName) {
 	return res;
 }
 
-/* bool isPathLink(char *path) {
+/* bool isPathLink(const char *path) {
     struct stat st;
     if (stat(path, &st) == -1) {
         printf("%s\n", path);
@@ -85,7 +106,7 @@ char *pathCat(char *path, char *fileName) {
     else return false;
 }
 
-bool isPathDir(char *path) {
+bool isPathDir(const char *path) {
     struct stat st;
     if (stat(path, &st) == -1) {
         printf("%s\n", path);
@@ -95,7 +116,7 @@ bool isPathDir(char *path) {
     else return false;
 }
 
-long long readFileLL(char *path) {
+long long readFileLL(const char *path) {
 	long long res;
 	FILE *f = fopen(path, "r");
 	if (!f) {
@@ -108,7 +129,7 @@ long long readFileLL(char *path) {
 	return res;
 }
 
-int writeFileInt(char *path, int value, bool isOverWrite) {
+int writeFileInt(const char *path, int value, bool isOverWrite) {
 	FILE *f;
 	if (isOverWrite) {
 		f = fopen(path, "w");
@@ -126,7 +147,7 @@ int writeFileInt(char *path, int value, bool isOverWrite) {
 	return value;
 }
 
-bool writeFileStr(char *path, char *value, bool isOverWrite) {
+bool writeFileStr(const char *path, const char *value, bool isOverWrite) {
 	FILE *f;
 	if (isOverWrite) {
 		f = fopen(path, "w");
@@ -144,7 +165,7 @@ bool writeFileStr(char *path, char *value, bool isOverWrite) {
 	return true;
 }
 
-bool clearFile(char *path) {
+bool clearFile(const char *path) {
 	FILE *f = fopen(path, "w");
 	if (!f) {
 		fprintf(stderr, "%s error\n", path);
