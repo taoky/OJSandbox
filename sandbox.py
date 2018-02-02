@@ -2,6 +2,7 @@ import os
 from shutil import copy
 import subprocess
 import compare
+import config
 import file
 import langSupport
 from judge import JudgeResult, JudgeError
@@ -84,7 +85,8 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     #cps = subprocess.run(compiling, bufsize=0, timeout=10)
     cps = executeProgramDocker(compiling, dir=file.getRunDir(), src=rsourceCodeName,
         stdin='/dev/null', stdout='/dev/null',
-        timeout=5000, memory=128, noseccomp=None, multiprocess=None, copyback=exefileName)
+        timeout=config.g['compile-time'], memory=config.g['compile-memory'],
+        noseccomp=None, multiprocess=None, copyback=exefileName)
     if not JudgeResult.isOK(cps.value):
         return JudgeError(JudgeResult.CE, results)
     proFiles = file.getProblemFiles(sourceFileName)

@@ -7,6 +7,9 @@ static int son_exec = 0;
 bool killedByTimer = false;
 bool memLimKilled = false;
 
+static int maxProcesses = 128;
+static int maxOutputFile = 16; // Unit: MiB
+
 struct runArgs_t
 {
     char *chrootDir;         // --chroot-dir
@@ -41,6 +44,8 @@ static const struct option longOpts[] = {
     {"allow-multi-process", no_argument, NULL, 0},
     {"exec-stderr", required_argument, NULL, 0},
     {"mem-rss-only", no_argument, NULL, 0},
+    {"max-processes", required_argument, NULL, 0},
+    {"output-file-size", required_argument, NULL, 0},
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
@@ -145,6 +150,14 @@ void option_handle(int argc, char **argv)
             if (strcmp("mem-rss-only", longOpts[longIndex].name) == 0)
             {
                 runArgs.isMemLimitRSS = true;
+            }
+            if (strcmp("max-processes", longOpts[longIndex].name) == 0)
+            {
+                maxProcesses = strtol(optarg, NULL, 10);
+            }
+            if (strcmp("output-file-size", longOpts[longIndex].name) == 0)
+            {
+                maxOutputFile = strtol(optarg, NULL, 10);
             }
             break;
         default:
@@ -345,8 +358,8 @@ int main(int argc, char **argv)
         // set rlimit
         setLimit(runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5),
                  runArgs.timeLimit == 0 ? 0 : (int)((runArgs.timeLimit + 1000) / 1000),
-                 runArgs.isMultiProcess ? 128 : 1,
-                 16,
+                 runArgs.isMultiProcess ? maxProcesses : 1,
+                 maxOutputFile,
                  runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
         // redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);

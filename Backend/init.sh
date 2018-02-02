@@ -3,6 +3,7 @@
 MODE0=0755
 MODE1=0666
 OJSUSER=ojs
+RAMDISKSIZE=24
 
 OUT() {
 	echo "$@"
@@ -41,6 +42,10 @@ if [ "$1" = "cleanup" ]; then
 	exit $?
 fi
 
+if [ -r "./config.sh" ]; then
+	. ./config.sh
+fi
+
 tmpTemplate="/tmp/ojs-XXXXXX"
 tmpDir=$(mktemp -d "$tmpTemplate")
 if [ $? -ne 0 ]; then
@@ -59,7 +64,7 @@ mknod dev/urandom c 1 9
 chmod $MODE1 dev/null dev/urandom
 mount -o bind /dev/null dev/null
 mount -o bind /dev/urandom dev/urandom
-mount -o size=24m,nr_inodes=4k,nosuid -t tmpfs tmp tmp
+mount -o "size=${RAMDISKSIZE}m,nr_inodes=4k,nosuid" -t tmpfs tmp tmp
 
 for i in bin etc/alternatives lib lib64 usr/bin usr/include usr/lib usr/share #usr/lib64 usr/libexec
 do

@@ -2,6 +2,7 @@
 import os
 import sys
 import sandbox
+import config
 import file
 import langSupport
 from judge import JudgeResult
@@ -36,6 +37,8 @@ def OJReset():
     file.cleanupWorkspace()
 
 if __name__ == '__main__':
+    config.loadConfig()
+    config.generateConfig()
     if len(sys.argv) >= 2:
         if sys.argv[1] == 'cleanup':
             OJReset()

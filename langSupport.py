@@ -1,4 +1,5 @@
 import file
+import config
 
 COMPILED = 1
 INTERPRETED = 2
@@ -42,8 +43,10 @@ dockerHelper = {
     'memory': ['-m', '%'],
     'noseccomp': ['--disable-seccomp'],
     'multiprocess': ['--allow-multi-process'],
+    'maxproc': ['--max-processes', '%'],
+    'outsize': ['--output-file-size', '%'],
     'copyback': ['--copy-back', '%']
-    #'command': ['--exec-command', '--', '%']
+    #'command': ['--exec-command', '--', '%'] # Special handling
 }
 
 def langType(lang):
@@ -70,6 +73,11 @@ def formatDockerHelper(command, **args):
             args['dir'] = args['dir'][:-1]
     except KeyError:
         pass
+
+    if 'config' in args:
+        del args['config']
+        args['maxproc'] = config.g['max-processes']
+        args['outsize'] = config.g['out-size']
 
     for key in args:
         try:
