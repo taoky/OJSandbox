@@ -1,9 +1,13 @@
+# Temp files
+*.tmp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 
 # C extensions
+*.o
 *.so
 
 # Distribution / packaging
@@ -114,4 +118,3 @@ venv.bak/
 Session.vim
 .netrwhist
 *~
-*.o

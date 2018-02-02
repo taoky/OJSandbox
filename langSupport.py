@@ -9,7 +9,7 @@ UNKNOWN = 0
 langs = {
     '.c': COMPILED,
     '.cpp': COMPILED,
-    '.py': INTERPRETED,
+    #'.py': INTERPRETED,
 }
 
 # '%i' is input file
@@ -17,9 +17,9 @@ langs = {
 # '%e' is executable
 
 compileHelper = {
-    '.c': ['gcc', '-Wall', '-O3', '%i', '-o', '%o'],
-    '.cpp': ['g++', '-Wall', '-O3', '%i', '-o', '%o'],
-    '.py': ['cp', '%i', '%o'],
+    '.c': ['/usr/bin/gcc', '-Wall', '-O3', '%i', '-o', '%o'],
+    '.cpp': ['/usr/bin/g++', '-Wall', '-O3', '%i', '-o', '%o'],
+    '.py': ['/bin/cp', '%i', '%o'],
     '.java': ['javac', '%i', '-o', '%o']
 }
 
@@ -65,6 +65,12 @@ def formatHelper(helper, **args):
 
 def formatDockerHelper(command, **args):
     res = dockerExe[:]
+    try:
+        while args['dir'][-1] == '/':
+            args['dir'] = args['dir'][:-1]
+    except KeyError:
+        pass
+
     for key in args:
         try:
             arg = [i if i != '%' else str(args[key]) for i in dockerHelper[key]]

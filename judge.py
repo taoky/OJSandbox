@@ -24,6 +24,7 @@ class JudgeResult:
     INFO = {
         AC: 'Accepted',
         WA: 'Wrong answer',
+        OK: 'OK',
         RE: 'Runtime error',
         MLE: 'Memory limit exceeded',
         TLE: 'Time limit exceeded',
@@ -39,6 +40,13 @@ class JudgeResult:
     @staticmethod
     def stringBase(res):
         return JudgeResult.INFO.get(res, 'Unknown result')
+
+    def isOK(s):
+        OKcode = [JudgeResult.AC, JudgeResult.WA, JudgeResult.OK]
+        try:
+            return s.value in OKcode
+        except AttributeError:
+            return s in OKcode
 
     def __init__(self, value, res = None):
         self.value = value
