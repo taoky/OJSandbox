@@ -1,15 +1,16 @@
-FROM debian
+FROM alpine
 
-ARG username=sandbox
-ARG userpasswd=sandbox
+# configure alpine repo & install language support for C, C++, Python2, Python3, Java
+# & install bash and curl
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
+&& apk update \
+&& apk add --no-cache bash gcc g++ python2 python3 openjdk8 curl \
+&& mkdir Backend \
+&& curl -L https://github.com/taoky/OJSandbox/raw/master/Backend/init.sh > Backend/init.sh \
+&& curl -L https://github.com/taoky/OJSandbox/raw/master/Backend/main > Backend/main \
+&& chmod +x Backend/init.sh && chmod +x Backend/main
 
-RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list \
-&& sed -i 's|security.debian.org|mirrors.ustc.edu.cn/debian-security|g' /etc/apt/sources.list \
-&& apt-get update \
-&& apt-get upgrade -y \
-&& apt-get install -y openssh-server sudo build-essential \
-&& echo AddressFamily inet >> /etc/ssh/sshd_config \
-&& useradd -ms /bin/bash $username && (echo $username:$userpasswd | chpasswd) \
-&& adduser $username sudo
+WORKDIR Backend
 
-CMD /usr/sbin/sshd -D
+# CMD unfinished 
+CMD ./init.sh
