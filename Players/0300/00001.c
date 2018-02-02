@@ -1,6 +1,3 @@
-// File: 301.c
-// Access violation
-
 #include <stdio.h>
 
 int main(){

@@ -31,7 +31,7 @@ def createWorkspace():
 def cleanupWorkspace():
     global runDir
     try:
-        cp = sub.run([initExe, 'cleanup'], stdout=sub.PIPE, universal_newlines=True)
+        cp = sub.run([initExe, 'cleanup'], stdout=sub.PIPE, stderr=sub.PIPE, universal_newlines=True)
     except FileNotFoundError:
         raise
     except:
@@ -40,6 +40,7 @@ def cleanupWorkspace():
     if cp.returncode != 0:
         # This may be a bit confusing but just use as a wordaround
         raise FileNotFoundError('Failed to cleanup workspace')
+    return cp
 
 def getRunDir():
     global runDir

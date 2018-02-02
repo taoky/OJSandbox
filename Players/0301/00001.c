@@ -1,6 +1,3 @@
-// File: 302.c
-// Attempt to get root
-
 #include <unistd.h>
 
 int main(){
