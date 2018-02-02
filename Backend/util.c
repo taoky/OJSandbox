@@ -56,15 +56,16 @@ void copyFile(const char *from, const char *to) {
 }
 
 void initUser(void) {
-    struct passwd *ojsuser = getpwnam("ojs");
-	if (ojsuser == NULL) {
-		errorExit(USERR);
-	}
-	ojsUID = ojsuser->pw_uid;
-	ojsGID = ojsuser->pw_gid;
-	if (!ojsUID || !ojsGID) {
-		errorExit(USERR);
-	}
+    // struct passwd *ojsuser = getpwnam("ojs");
+	// if (ojsuser == NULL) {
+	// 	errorExit(USERR);
+	// }
+	// ojsUID = ojsuser->pw_uid;
+	// ojsGID = ojsuser->pw_gid;
+	// if (!ojsUID || !ojsGID) {
+	// 	errorExit(USERR);
+	// }
+	ojsUID = ojsGID = 65534; // alpine's nobody's uid & gid are surely 65534.
 }
 
 void setNonPrivilegeUser(void) {

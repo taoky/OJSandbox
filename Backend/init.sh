@@ -19,12 +19,6 @@ cleanup() {
 	return 0
 }
 
-
-id -u $OJSUSER &>/dev/null
-if [ $? -eq 1 ]; then
-  useradd -s /usr/sbin/nologin -r -M -d /dev/null $OJSUSER
-fi
-
 if [ $UID -ne 0 ]; then
 	ERR "This program requires root"
 	exit -1
@@ -34,6 +28,11 @@ if [ "$1" = "cleanup" ]; then
 	cleanup
 	exit $?
 fi
+
+# id -u $OJSUSER &>/dev/null
+# if [ $? -eq 1 ]; then
+#   useradd -s /usr/sbin/nologin -r -M -d /dev/null $OJSUSER
+# fi
 
 tmpTemplate="/tmp/ojs-XXXXXX"
 tmpDir=$(mktemp -d "$tmpTemplate")
