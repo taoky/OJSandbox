@@ -24,16 +24,14 @@ def executeProgram(command, **options):
     return JudgeResult(JudgeResult.OK)
 
 def executeProgramDocker(command, **options):
-    #TODO: Identify the temp directory
-    options['dir'] = file.getRunDir()
+    if not 'dir' in options:
+        options['dir'] = file.getRunDir()
     running = langSupport.formatDockerHelper(command, **options)
     pwd = os.getcwd()
-    os.chdir(file.getRunDir())
     cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    os.chdir(pwd)
     res = cp.stdout.split('\n')
     if cp.returncode != 0:
-        print(cp.stderr)
+        #print(cp.stderr)
         res[0] = 'IE'
     return JudgeResult(getattr(JudgeResult, res[0].strip()))
 
@@ -43,28 +41,28 @@ def plainJudge(program, codeType, infile, outfile, **config):
     copy(infile, file.getRunDir() + inRedir)
     #istream = open(inRedir, 'r')
     #ostream = open(outRedir, 'w')
-    files = {'in': inRedir, 'out': outRedir}
     #proFileName = os.path.splitext(i[0])[0]
     runHelper = langSupport.executeHelper[codeType]
     running = langSupport.formatHelper(runHelper, exefile=program)
     #runResult = executeProgram(running, stdin=istream, stdout=ostream, timeout=config['timeout'] / 1000.0)
     #runResult = executeProgramDocker(running, src=program, stdin=inRedir, stdout=outRedir,
-    runResult = executeProgramDocker(None, src=program, stdin=inRedir, stdout=outRedir,
+    runResult = executeProgramDocker(None, dir=file.getRunDir(), src=program,
+        stdin=file.getRunDir() + inRedir, stdout=file.getRunDir() + outRedir,
         timeout=config['timeout'], memory=config['ram'])
     rp = runResult.value
-    copy(file.getRunDir() + outRedir, os.getcwd())
     #istream.close()
     #ostream.close()
 
     forwardResults = [JudgeResult.RE, JudgeResult.TLE, JudgeResult.MLE, JudgeResult.FSE]
     if rp in forwardResults:
-        os.remove(file.getRunDir() + inRedir)
-        os.remove(file.getRunDir() + outRedir)
+        file.safeRemove(file.getRunDir() + inRedir)
+        file.safeRemove(file.getRunDir() + outRedir)
         return JudgeResult(rp)
+    copy(file.getRunDir() + outRedir, os.getcwd())
 
     compareMethod = compare.getCompareMethod(config["compare"])
     cp = compareMethod(outfile, file.runDir + outRedir)
-    os.remove(outRedir) # cleanup
+    file.safeRemove(outRedir) # cleanup
     if cp == False:
         return JudgeResult(JudgeResult.WA)
     return JudgeResult(JudgeResult.AC)
@@ -76,16 +74,17 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     rsourceCodeName = directory + sourceFileName + sourceFileExt
     results = []
     
-    # os.system(compileHelper[sourceFileExt] % (rsourceCodeName, rsourceFileName))
     try:
-        compileHelper = langSupport.compileHelper[sourceFileExt.lower()]
+        compileHelper = langSupport.compileHelper[sourceFileExt.lower()][:]
         #compiling = langSupport.formatHelper(compileHelper, infile=rsourceCodeName, outfile=rsourceFileName)
         compiling = langSupport.formatHelper(compileHelper, infile=sourceFileName+sourceFileExt, outfile=exefileName)
     except KeyError as e:
         return JudgeError(JudgeResult.FTE)
     
     #cps = subprocess.run(compiling, bufsize=0, timeout=10)
-    cps = executeProgramDocker(compiling, dir=file.runDir, src=os.getcwd() + '/' + rsourceCodeName, stdin='/dev/null', stdout='/dev/null', timeout=5000, memory=128, noseccomp=None, multiprocess=None, copyback=exefileName)
+    cps = executeProgramDocker(compiling, dir=file.getRunDir(), src=rsourceCodeName,
+        stdin='/dev/null', stdout='/dev/null',
+        timeout=5000, memory=128, noseccomp=None, multiprocess=None, copyback=exefileName)
     if not JudgeResult.isOK(cps.value):
         return JudgeError(JudgeResult.CE, results)
     proFiles = file.getProblemFiles(sourceFileName)
@@ -94,14 +93,14 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
         infile = file.getProblemDirectory(sourceFileName) + i[0]
         outfile = file.getProblemDirectory(sourceFileName) + i[1]
         proFileName = os.path.splitext(infile)[0]
-        result = plainJudge(rsourceFileName, sourceFileExt.lower(), infile, outfile, **problemConfig)
+        result = plainJudge(exefileName, sourceFileExt.lower(), infile, outfile, **problemConfig)
         firstError = writeResult(results, firstError, result.value, proFileName)
         if not firstError is None:
             break
 
     if firstError is None:
         firstError = JudgeResult.WA
-    os.remove(rsourceFileName) # remove the compiler file
+    os.remove(exefileName) # remove the compiler file
     return JudgeResult(firstError, results)
 
 def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):

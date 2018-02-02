@@ -49,6 +49,13 @@ def getRunDir():
         runDir += '/'
     return runDir
 
+def safeRemove(f):
+    try:
+        os.remove(f)
+        return True
+    except FileNotFoundError:
+        return False
+
 def removeHiddenFiles(li):
     return [i for i in li if not i.startswith('.')]
 

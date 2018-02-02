@@ -39,4 +39,5 @@ if __name__ == '__main__':
     if len(sys.argv) >= 2:
         if sys.argv[1] == 'cleanup':
             OJReset()
+            exit(0)
     OJRun()
