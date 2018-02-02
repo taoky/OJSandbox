@@ -39,12 +39,11 @@ void copyFile(char *from, char *to);
 void initUser(void);
 void setNonPrivilegeUser(void);
 char *pathCat(char *path, char *fileName);
-bool isPathLink(char *path);
+/* bool isPathLink(char *path);
 bool isPathDir(char *path);
-void bindMountHelper(char *from, char *to);
 long long readFileLL(char *path);
 int writeFileInt(char *path, int value, bool isOverWrite);
-bool clearFile(char *path);
+bool clearFile(char *path); */
 int timevalms(const struct timeval *timev);
 void setrlimStruct(rlim_t num, struct rlimit * st);
 bool writeFileStr(char *path, char *value, bool isOverWrite);

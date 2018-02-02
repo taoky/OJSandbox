@@ -75,7 +75,7 @@ char *pathCat(char *path, char *fileName) {
 	return res;
 }
 
-bool isPathLink(char *path) {
+/* bool isPathLink(char *path) {
     struct stat st;
     if (stat(path, &st) == -1) {
         printf("%s\n", path);
@@ -93,22 +93,6 @@ bool isPathDir(char *path) {
     }
     if ((st.st_mode & S_IFMT) == S_IFDIR) return true;
     else return false;
-}
-
-void bindMountHelper(char *from, char *to) {
-    int res;
-    if (isPathLink(from)) {
-        res = symlink(from, to);
-        printf("%s %s symlink %d\n", from, to, res);
-    }
-    else if (isPathDir(from)) {
-        res = mount(from, to, "", MS_BIND | MS_NOSUID, NULL);
-        res = mount(from, to, "", MS_BIND | MS_NOSUID | MS_REMOUNT | MS_RDONLY, NULL);
-        printf("%s %s mount %d\n", from, to, res);
-    }
-    else {
-        printf("%s %s WTF?\n", from, to);
-    }
 }
 
 long long readFileLL(char *path) {
@@ -169,7 +153,7 @@ bool clearFile(char *path) {
 	}
 	fclose(f);
 	return true;
-}
+} */
 
 int timevalms(const struct timeval *timev) {
 	return timev->tv_sec * 1000 + timev->tv_usec / 1000;

@@ -46,14 +46,3 @@ void nativeProgRules(char *progExec)
     }
     seccomp_release(ctx);
 }
-
-void runnerRules(char *progExec)
-{
-    // // blacklist
-    // scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_ALLOW);
-    // if (ctxd == NULL)
-    // {
-    //     errorExit(SCERR);
-    // }
-    // for ()
-}

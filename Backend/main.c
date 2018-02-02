@@ -370,7 +370,7 @@ int main(int argc, char **argv)
         // 5. set uid & gid to nobody
         setNonPrivilegeUser();
 
-        char **f_envp = {NULL}, **f_argv = {NULL};
+        char /* **f_envp = {NULL},*/ **f_argv = {NULL};
         if (runArgs.isCommandEnabled)
         {
             f_argv = runArgs.execCommand;
