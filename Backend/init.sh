@@ -2,6 +2,7 @@
 
 MODE0=0755
 MODE1=0666
+MODE2=0444
 OJSUSER=ojs
 
 OUT() {
@@ -69,6 +70,7 @@ do
 done
 
 echo -n "grant { };" > etc/java.policy
+chmod $MODE2 etc/java.policy
 OUT "The tmp dir: ${tmpDir}"
 
 
