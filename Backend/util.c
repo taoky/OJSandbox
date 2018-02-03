@@ -56,16 +56,16 @@ void copyFile(const char *from, const char *to) {
 }
 
 void initUser(void) {
-    // struct passwd *ojsuser = getpwnam("ojs");
-	// if (ojsuser == NULL) {
-	// 	errorExit(USERR);
-	// }
-	// ojsUID = ojsuser->pw_uid;
-	// ojsGID = ojsuser->pw_gid;
-	// if (!ojsUID || !ojsGID) {
-	// 	errorExit(USERR);
-	// }
-	ojsUID = ojsGID = 65534; // alpine's nobody's uid & gid are surely 65534.
+    struct passwd *ojsuser = getpwnam("ojs");
+	if (ojsuser == NULL) {
+		errorExit(USERR);
+	}
+	ojsUID = ojsuser->pw_uid;
+	ojsGID = ojsuser->pw_gid;
+	if (!ojsUID || !ojsGID) {
+		errorExit(USERR);
+	}
+	// ojsUID = ojsGID = 65534; // alpine's nobody's uid & gid are surely 65534.
 }
 
 void setNonPrivilegeUser(void) {
@@ -102,4 +102,22 @@ int timevalms(const struct timeval *timev) {
 
 void setrlimStruct(rlim_t num, struct rlimit * st) {
 	st->rlim_cur = st->rlim_max = num;
+}
+
+// char *unstandard_basename(const char *str) {
+// 	/* port from glibc's prototype to musl libc */
+// 	char *p = strrchr(str, '/');
+// 	if (p == NULL)
+// 		return (char *)str;
+// 	else
+// 		return p + 1;
+// }
+
+void default_signal(int signum, sighandler_t handler) {
+	struct sigaction act = {};
+	act.sa_flags = 0;
+	act.sa_handler = handler;
+	if (sigaction(signum, &act, NULL) == -1) {
+		errorExit(SGERR);
+	}
 }

@@ -3,7 +3,7 @@
 #include "secrules.h"
 
 pid_t son;
-static int son_exec = 0;
+static volatile int son_exec = 0;
 bool killedByTimer = false;
 bool memLimKilled = false;
 
@@ -322,7 +322,7 @@ int main(int argc, char **argv)
     }
     option_handle(argc, argv);
     logRedirect(runArgs.logFileName);
-    signal(SIGUSR1, ready);
+    default_signal(SIGUSR1, ready);
 
     char *execFileBaseName = basename(runArgs.execFileName);
     char *finalExecName = NULL;
@@ -355,7 +355,8 @@ int main(int argc, char **argv)
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
 
         logRedirect(runArgs.execStderr);
-        chdir(runArgs.tmpDir);
+        if (runArgs.tmpDir)
+            chdir(runArgs.tmpDir);
         // set uid & gid to user 'ojs'
         setNonPrivilegeUser();
 

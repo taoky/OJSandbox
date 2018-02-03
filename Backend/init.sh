@@ -29,10 +29,10 @@ if [ "$1" = "cleanup" ]; then
 	exit $?
 fi
 
-# id -u $OJSUSER &>/dev/null
-# if [ $? -eq 1 ]; then
-#   useradd -s /usr/sbin/nologin -r -M -d /dev/null $OJSUSER
-# fi
+id -u $OJSUSER &>/dev/null
+if [ $? -eq 1 ]; then
+  useradd -s /usr/sbin/nologin -r -M -d /dev/null $OJSUSER
+fi
 
 tmpTemplate="/tmp/ojs-XXXXXX"
 tmpDir=$(mktemp -d "$tmpTemplate")

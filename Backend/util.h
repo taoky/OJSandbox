@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -39,6 +40,8 @@ extern const char *const RES_MLE;
 extern uid_t ojsUID;
 extern gid_t ojsGID;
 
+typedef void (*sighandler_t)(int);
+
 bool isRootUser(void);
 void errorExit(const char *str);
 void copyFile(const char *from, const char *to);
@@ -48,5 +51,7 @@ char *pathCat(const char *path, const char *fileName);
 int timevalms(const struct timeval *timev);
 void setrlimStruct(rlim_t num, struct rlimit * st);
 bool writeFileStr(const char *path, const char *value, bool isOverWrite);
+// char *unstandard_basename(const char *str);
+void default_signal(int signum, sighandler_t handler);
 
 #endif
