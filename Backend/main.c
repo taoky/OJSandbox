@@ -9,35 +9,27 @@ bool memLimKilled = false;
 
 struct runArgs_t
 {
-    char *tmpDir;            // --tmp-dir
-    char *execFileName;      // --exec-file
     char **execCommand;      // after '--'
     char *inputFileName;     // --input
     char *outputFileName;    // --output
     char *logFileName;       // --log, optional
-    char *copyBackFileName;  // --copy-back, optional (compile)
     char *execStderr;        // --exec-stderr, optional
     unsigned long timeLimit; // --time-limit
     unsigned long memLimit;  // --mem-limit
     bool isSeccompDisabled;  // --disable-seccomp, optional
-    bool isCommandEnabled;   // --exec-command
     bool isMultiProcess;     // --allow-multi-process
     bool isMemLimitRSS;      // --mem-rss-only
 } runArgs;
 
-static const char *const optString = "+d:e:i:o:t:m:l:h?";
+static const char *const optString = "+i:o:t:m:l:h?";
 
 static const struct option longOpts[] = {
-    {"tmp-dir", required_argument, NULL, 'd'},
-    {"exec-file", required_argument, NULL, 'e'},
-    {"exec-command", no_argument, NULL, 0},
     {"input", required_argument, NULL, 'i'},
     {"output", required_argument, NULL, 'o'},
     {"log", required_argument, NULL, 'l'},
     {"time-limit", required_argument, NULL, 't'},
     {"mem-limit", required_argument, NULL, 'm'},
     {"disable-seccomp", no_argument, NULL, 0},
-    {"copy-back", required_argument, NULL, 0},
     {"allow-multi-process", no_argument, NULL, 0},
     {"exec-stderr", required_argument, NULL, 0},
     {"mem-rss-only", no_argument, NULL, 0},
@@ -47,11 +39,8 @@ static const struct option longOpts[] = {
 void display_help(const char *a0)
 {
     log("This is the backend of the sandbox for oj.\n");
-    log("Usage: %s -d path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
-    log("or: %s --tmp-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
-    log("--tmp-dir or -d: (Optional, run at current working directory at default) The directory that the program will be run in.\n");
-    log("--exec-file or -e: The program (or source file) that will be executed or interpreted.\n");
-    log("--exec-command: (Optional) Enable the function to run command after '--'.\n");
+    log("Usage: %s -i file -o file [--disable-seccomp] [--allow-multi-process] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] -- PROG [ARGS]\n", a0);
+    log("or: %s --input file --output file [--disable-seccomp] [--allow-multi-process] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] -- PROG [ARGS]\n", a0);
     log("--input or -i: The file that will be the input source.\n");
     log("--output or -o: The file that will be the output (stdout) of the program.\n");
     log("--log or -l: (Optional, stderr by default) The file that will be the output (stderr) of the sandbox (& program).\n");
@@ -70,8 +59,8 @@ void option_handle(int argc, char **argv)
 {
     // init runArgs
     runArgs.timeLimit = runArgs.memLimit = 0;
-    runArgs.tmpDir = runArgs.execFileName = runArgs.copyBackFileName = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
-    runArgs.isSeccompDisabled = runArgs.isCommandEnabled = runArgs.isMultiProcess = runArgs.isMemLimitRSS = false;
+    runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
+    runArgs.isSeccompDisabled = runArgs.isMultiProcess = runArgs.isMemLimitRSS = false;
     runArgs.execCommand = (char **)NULL;
     runArgs.execStderr = NULL;
     int longIndex;
@@ -82,12 +71,6 @@ void option_handle(int argc, char **argv)
     {
         switch (opt)
         {
-        case 'd':
-            runArgs.tmpDir = optarg;
-            break;
-        case 'e':
-            runArgs.execFileName = optarg;
-            break;
         case 'i':
             runArgs.inputFileName = optarg;
             break;
@@ -126,14 +109,6 @@ void option_handle(int argc, char **argv)
             {
                 runArgs.isSeccompDisabled = true;
             }
-            if (strcmp("copy-back", longOpts[longIndex].name) == 0)
-            {
-                runArgs.copyBackFileName = optarg;
-            }
-            if (strcmp("exec-command", longOpts[longIndex].name) == 0)
-            {
-                runArgs.isCommandEnabled = true;
-            }
             if (strcmp("allow-multi-process", longOpts[longIndex].name) == 0)
             {
                 runArgs.isMultiProcess = true;
@@ -151,17 +126,14 @@ void option_handle(int argc, char **argv)
             break;
         }
     }
-    if (runArgs.isCommandEnabled)
+    if (optind >= argc)
     {
-        if (optind >= argc)
-        {
-            log("Missing command. Remember to add your command after '--'!\n");
-            exit(-1);
-        }
-        runArgs.execCommand = argv + optind;
+        log("Missing command. Remember to add your command after '--'!\n");
+        exit(-1);
     }
+    runArgs.execCommand = argv + optind;
     // check
-    if (runArgs.execFileName == NULL || runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
+    if (runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
     {
         log("Missing argument(s).\nUse %s -h or %s --help to get help.\n", argv[0], argv[0]);
         exit(-1);
@@ -169,11 +141,6 @@ void option_handle(int argc, char **argv)
     if (runArgs.isMemLimitRSS && runArgs.memLimit == 0)
     {
         log("Missing --mem-limit when --mem-rss-only is on.\n");
-        exit(-1);
-    }
-    if (runArgs.copyBackFileName && !runArgs.tmpDir)
-    {
-        log("--copy-back requires --tmp-dir.\n");
         exit(-1);
     }
 }
@@ -324,14 +291,6 @@ int main(int argc, char **argv)
     logRedirect(runArgs.logFileName);
     default_signal(SIGUSR1, ready);
 
-    char *execFileBaseName = basename(runArgs.execFileName);
-    char *finalExecName = NULL;
-    if (runArgs.tmpDir)
-    {
-        finalExecName = pathCat(runArgs.tmpDir, execFileBaseName);
-        copyFile(runArgs.execFileName, finalExecName);
-    }
-    char *execProg = runArgs.execFileName;
     initUser();
     son_exec = 0;
     son = fork();
@@ -355,17 +314,11 @@ int main(int argc, char **argv)
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
 
         logRedirect(runArgs.execStderr);
-        if (runArgs.tmpDir)
-            chdir(runArgs.tmpDir);
         // set uid & gid to user 'ojs'
         setNonPrivilegeUser();
 
-        char **f_argv = {NULL};
-        if (runArgs.isCommandEnabled)
-        {
-            f_argv = runArgs.execCommand;
-            execProg = runArgs.execCommand[0];
-        }
+        char **f_argv = runArgs.execCommand;
+        char *execProg = runArgs.execCommand[0];
 
         while (!son_exec)
             ;
@@ -446,18 +399,6 @@ int main(int argc, char **argv)
         gettimeofday(&progEnd, NULL);
         timersub(&progEnd, &progStart, &useTime);
         int actualTime = timevalms(&useTime);
-        if (runArgs.tmpDir)
-        {
-            remove(finalExecName);
-            free(finalExecName);
-        }
-        if (runArgs.copyBackFileName != NULL)
-        {
-            char *copyFrom = pathCat(runArgs.tmpDir, runArgs.copyBackFileName);
-            // copyto TODO
-            copyFile(copyFrom, runArgs.copyBackFileName);
-            free(copyFrom);
-        }
         itval.it_value.tv_sec = itval.it_value.tv_usec = 0; // stop timer
         if (WIFEXITED(status))
         {
