@@ -47,7 +47,6 @@ void display_help(const char *a0)
     log("--time-limit or -t: (Optional, unlimited by default) The time (ms) limit of the program.\n");
     log("--mem-limit or -m: (Optional, unlimited by default) The memory size (MB) limit of the program.\n");
     log("--disable-seccomp: (Optional) This will disable system call filter.\n");
-    log("--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.\n");
     log("--allow-multi-process: (Optional) change process number limitation from 1 to 128.\n");
     log("--exec-stderr: (Optional) This file will be the output (stderr) of the executed program.\n");
     log("--mem-rss-only: (Optional) Limit RSS (Resident Set Size) memory only, if --mem-limit is on\n.");
