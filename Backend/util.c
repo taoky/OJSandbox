@@ -58,7 +58,12 @@ void copyFile(const char *from, const char *to) {
 void initUser(void) {
     struct passwd *ojsuser = getpwnam("ojs");
 	if (ojsuser == NULL) {
-		errorExit(USERR);
+		if (errno != 0)
+			errorExit(USERR);
+		else {
+			log("Cannot find user 'ojs'.\n");
+			exit(-1);
+		}
 	}
 	ojsUID = ojsuser->pw_uid;
 	ojsGID = ojsuser->pw_gid;
@@ -115,7 +120,7 @@ void setrlimStruct(rlim_t num, struct rlimit * st) {
 
 void default_signal(int signum, sighandler_t handler) {
 	struct sigaction act = {};
-	act.sa_flags = 0;
+	act.sa_flags = SA_RESTART;
 	act.sa_handler = handler;
 	if (sigaction(signum, &act, NULL) == -1) {
 		errorExit(SGERR);

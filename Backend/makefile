@@ -4,7 +4,7 @@ all: main
 
 CC := gcc
 CFLAGS := -O3 -Wall -s
-LDFLAGS := -lseccomp -static
+LDFLAGS := -lseccomp
 OBJS = main.o secrules.o util.o
 
 main: $(OBJS)

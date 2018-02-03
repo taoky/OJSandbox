@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -15,6 +16,8 @@
 #include <sys/mount.h>
 #include <fcntl.h>
 #include <pwd.h>
+
+#define log(...) fprintf(stderr, __VA_ARGS__)
 
 extern const char *const RLERR;
 extern const char *const GIERR;

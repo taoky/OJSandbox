@@ -14,6 +14,4 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#define log(...) fprintf(stderr, __VA_ARGS__)
-
 #endif

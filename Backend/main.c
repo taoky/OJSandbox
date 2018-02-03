@@ -331,7 +331,7 @@ int main(int argc, char **argv)
         finalExecName = pathCat(runArgs.tmpDir, execFileBaseName);
         copyFile(runArgs.execFileName, finalExecName);
     }
-    char *execProg = execFileBaseName;
+    char *execProg = runArgs.execFileName;
     initUser();
     son_exec = 0;
     son = fork();
@@ -385,7 +385,7 @@ int main(int argc, char **argv)
         char procStat[12 + 10] = {};
         sprintf(procStat, "/proc/%d/stat", son);
         // set timer
-        signal(SIGALRM, killChild);
+        default_signal(SIGALRM, killChild);
         struct itimerval itval;
         if (runArgs.timeLimit != 0)
         {
