@@ -11,6 +11,8 @@ volumes = {"../volume": {"bind": "/volume", "mode": "rw"}}
 container = client.containers.run("ojs-alpha", detach=True, volumes=volumes)
 
 # use backend
-container.exec_run(["Backend/main", "-i", "/dev/null", "-o", "/dev/null", "--", "/volume/execTest0"])
+res = container.exec_run(["Backend/main", "-i", "/dev/null", "-o", "/dev/null", "--", "/volume/execTest0"], stderr=False)
+print(res[0]) # exit_code
+print(res[1]) # output (stdout)
 
 # to be continued...
