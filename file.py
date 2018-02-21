@@ -7,7 +7,7 @@ import docker
 from pathlib import Path
 
 workDir = os.getcwd() + '/'
-# runDir = None
+runDir = None
 resourceDir = os.getcwd() + '/Backend/'
 # initExe = resourceDir + 'init.sh'
 backendExe = "/Backend/main"
@@ -18,16 +18,17 @@ client = docker.from_env()
 container = None
 
 def createWorkspace():
-    # global runDir
+    global runDir
     global container
     try:
     #     cp = sub.run([initExe], stdout=sub.PIPE, universal_newlines=True)
     # except FileNotFoundError:
     #     raise
         # build ojs-alpha image
-        client.images.build(path="Dockerfile", tag="ojs-alpha")
+        client.images.build(path=".", tag="ojs-alpha")
         print("Build ojs-alpha image done.")
         volume_path = str(Path("volume").resolve())
+        runDir = volume_path
         volumes = {volume_path: {"bind": "/volume", "mode": "rw"}}
         container = client.containers.run("ojs-alpha", detach=True, volumes=volumes, stdin_open=True)
         print("Container {0} is running...".format(container))
@@ -35,9 +36,9 @@ def createWorkspace():
         # Not implemented yet
         print("An error occurred. Is Docker configured correctly?")
         raise
-    if cp.returncode != 0:
-        # This may be a bit confusing but just use as a wordaround
-        raise FileNotFoundError("Failed to create workspace")
+    # if cp.returncode != 0:
+    #     # This may be a bit confusing but just use as a wordaround
+    #     raise FileNotFoundError("Failed to create workspace")
     # runDir = cp.stdout.split(':')[-1].strip()
     # if not os.path.isdir(runDir):
     #     raise FileNotFoundError("Failed to create workspace")
@@ -49,23 +50,28 @@ def cleanupWorkspace():
     #     cp = sub.run([initExe, 'cleanup'], stdout=sub.PIPE, universal_newlines=True)
     # except FileNotFoundError:
     #     raise
-        container.stop()
+        if not container == None:
+            container.stop()
+        else:
+            containerList = client.containers.list(filters={"status":"running", "ancestor":"ojs-alpha"})
+            for i in containerList:
+                i.stop()
         print("Container stopped successfully.")
     except:
         # Not implemented yet
         print("Failed to stop container.")
         raise
-    if cp.returncode != 0:
-        # This may be a bit confusing but just use as a wordaround
-        raise FileNotFoundError('Failed to cleanup workspace')
+    # if cp.returncode != 0:
+    #     # This may be a bit confusing but just use as a wordaround
+    #     raise FileNotFoundError('Failed to cleanup workspace')
 
-# def getRunDir():
-#     global runDir
-#     if runDir is None:
-#         createWorkspace()
-#     if runDir[-1] != '/':
-#         runDir += '/'
-#     return runDir
+def getRunDir():
+    global runDir
+    if runDir is None:
+        createWorkspace()
+    if runDir[-1] != '/':
+        runDir += '/'
+    return runDir
 
 def safeRemove(f):
     try:

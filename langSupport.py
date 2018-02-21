@@ -30,7 +30,7 @@ executeHelper = {
     '.java': ['javaw', '%e']
 }
 
-dockerExe = file.backendExe
+dockerExe = [file.backendExe]
 # dockerHelper has a ddifferrennt format from other helpers!
 dockerHelper = {
     # 'dir': ['-c', '%'],
@@ -64,7 +64,7 @@ def formatHelper(helper, **args):
     return [fdict.get(key, key) for key in helper]
 
 def formatDockerHelper(command, **args):
-    res = dockerExe
+    res = dockerExe[:]
     # try:
     #     while args['dir'][-1] == '/':
     #         args['dir'] = args['dir'][:-1]

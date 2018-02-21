@@ -24,16 +24,22 @@ def executeProgram(command, **options):
     return JudgeResult(JudgeResult.OK)
 
 def executeProgramDocker(command, **options):
-    if not 'dir' in options:
-        options['dir'] = file.getRunDir()
+    # if not 'dir' in options:
+    #     options['dir'] = file.getRunDir()
     running = langSupport.formatDockerHelper(command, **options)
     pwd = os.getcwd()
     # cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    print(running)
+
     cp = file.container.exec_run(running, stderr=False)
-    res = cp[1]('\n')
+    res = cp[1].decode().split('\n')
     if cp[0] != 0:
         #print(cp.stderr)
         res[0] = 'IE'
+
+    print(res)
+    
     return JudgeResult(getattr(JudgeResult, res[0].strip()))
 
 def plainJudge(program, codeType, infile, outfile, **config):
@@ -83,6 +89,9 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
         return JudgeError(JudgeResult.FTE)
     
     #cps = subprocess.run(compiling, bufsize=0, timeout=10)
+    
+    print(compiling)
+
     cps = executeProgramDocker(compiling, # src=rsourceCodeName,
         stdin='/dev/null', stdout='/dev/null',
         timeout=5000, memory=128, noseccomp=None, multiprocess=None)
