@@ -30,11 +30,11 @@ executeHelper = {
     '.java': ['javaw', '%e']
 }
 
-dockerExe = ['sudo', file.backendExe]
+dockerExe = file.backendExe
 # dockerHelper has a ddifferrennt format from other helpers!
 dockerHelper = {
-    'dir': ['-c', '%'],
-    'src': ['-e', '%'],
+    # 'dir': ['-c', '%'],
+    # 'src': ['-e', '%'],
     'stdin': ['-i', '%'],
     'stdout': ['-o', '%'],
     'stderr': [], # This is not implemented yet
@@ -42,7 +42,7 @@ dockerHelper = {
     'memory': ['-m', '%'],
     'noseccomp': ['--disable-seccomp'],
     'multiprocess': ['--allow-multi-process'],
-    'copyback': ['--copy-back', '%']
+    # 'copyback': ['--copy-back', '%']
     #'command': ['--exec-command', '--', '%']
 }
 
@@ -64,12 +64,12 @@ def formatHelper(helper, **args):
     return [fdict.get(key, key) for key in helper]
 
 def formatDockerHelper(command, **args):
-    res = dockerExe[:]
-    try:
-        while args['dir'][-1] == '/':
-            args['dir'] = args['dir'][:-1]
-    except KeyError:
-        pass
+    res = dockerExe
+    # try:
+    #     while args['dir'][-1] == '/':
+    #         args['dir'] = args['dir'][:-1]
+    # except KeyError:
+    #     pass
 
     for key in args:
         try:
@@ -77,7 +77,7 @@ def formatDockerHelper(command, **args):
             res += arg
         except KeyError:
             pass
-    if not command is None:
-        res += ['--exec-command', '--'] + command
+
+    res += ['--'] + command
     return res
 
