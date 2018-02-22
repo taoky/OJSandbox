@@ -10,7 +10,7 @@ workDir = os.getcwd() + '/'
 runDir = None
 resourceDir = os.getcwd() + '/Backend/'
 # initExe = resourceDir + 'init.sh'
-backendExe = "/Backend/main"
+backendExe = "/Backend/judger"
 inFileName = 'in.tmp'
 outFileName = 'out.tmp'
 

@@ -77,7 +77,8 @@ def formatDockerHelper(command, **args):
             res += arg
         except KeyError:
             pass
-
+    if type(command) is str:
+        command = [command]
     res += ['--'] + command
     return res
 

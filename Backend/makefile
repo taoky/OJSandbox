@@ -1,17 +1,17 @@
 .PHONY: all clean
 
-all: main
+all: judger
 
 CC := gcc
 CFLAGS := -O3 -Wall -s
 LDFLAGS := -lseccomp
 OBJS = main.o secrules.o util.o
 
-main: $(OBJS)
+judger: $(OBJS)
 	${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
 
 %.o: %.c
 	${CC} ${CFLAGS} -c -o $@ $^
 
 clean:
-	rm -f main $(OBJS)
+	rm -f judger $(OBJS)

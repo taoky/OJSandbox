@@ -36,6 +36,7 @@ def executeProgramDocker(command, **options):
     res = cp[1].decode().split('\n')
     if cp[0] != 0:
         #print(cp.stderr)
+        # print(cp[0])
         res[0] = 'IE'
 
     print(res)
@@ -46,6 +47,9 @@ def plainJudge(program, codeType, infile, outfile, **config):
     inRedir = file.inFileName
     outRedir = file.outFileName
     copy(infile, file.getRunDir() + inRedir)
+
+    # print("Copy file from {0} to {1}".format(infile, file.getRunDir() + inRedir))
+
     #istream = open(inRedir, 'r')
     #ostream = open(outRedir, 'w')
     #proFileName = os.path.splitext(i[0])[0]
@@ -54,7 +58,7 @@ def plainJudge(program, codeType, infile, outfile, **config):
     #runResult = executeProgram(running, stdin=istream, stdout=ostream, timeout=config['timeout'] / 1000.0)
     #runResult = executeProgramDocker(running, src=program, stdin=inRedir, stdout=outRedir,
     runResult = executeProgramDocker(program,
-        stdin=file.getRunDir() + inRedir, stdout=file.getRunDir() + outRedir,
+        stdin=inRedir, stdout=outRedir,
         timeout=config['timeout'], memory=config['ram'])
     rp = runResult.value
     #istream.close()
@@ -80,7 +84,8 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     rsourceFileName = file.getRunDir() + exefileName
     rsourceCodeName = directory + sourceFileName + sourceFileExt
     results = []
-    
+    # print(rsourceCodeName, rsourceFileName)
+    copy(rsourceCodeName, file.getRunDir() + sourceFileName + sourceFileExt)
     try:
         compileHelper = langSupport.compileHelper[sourceFileExt.lower()][:]
         #compiling = langSupport.formatHelper(compileHelper, infile=rsourceCodeName, outfile=rsourceFileName)
@@ -110,7 +115,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
 
     if firstError is None:
         firstError = JudgeResult.WA
-    os.remove(exefileName) # remove the compiler file
+    os.remove(rsourceFileName) # remove the compiler file
     return JudgeResult(firstError, results)
 
 def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
