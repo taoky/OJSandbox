@@ -31,9 +31,9 @@ executeHelper = {
     '.java': ['javaw', '%e']
 }
 
-dockerExe = ['sudo', file.backendExe]
-# dockerHelper has a ddifferrennt format from other helpers!
-dockerHelper = {
+backendExe = ['sudo', file.backendExe]
+# backendHelper has a ddifferrennt format from other helpers!
+backendHelper = {
     'dir': ['-c', '%'],
     'src': ['-e', '%'],
     'stdin': ['-i', '%'],
@@ -66,8 +66,8 @@ def formatHelper(helper, **args):
     
     return [fdict.get(key, key) for key in helper]
 
-def formatDockerHelper(command, **args):
-    res = dockerExe[:]
+def formatBackendHelper(command, **args):
+    res = backendExe[:]
     try:
         while args['dir'][-1] == '/':
             args['dir'] = args['dir'][:-1]
@@ -81,7 +81,7 @@ def formatDockerHelper(command, **args):
 
     for key in args:
         try:
-            arg = [i if i != '%' else str(args[key]) for i in dockerHelper[key]]
+            arg = [i if i != '%' else str(args[key]) for i in backendHelper[key]]
             res += arg
         except KeyError:
             pass

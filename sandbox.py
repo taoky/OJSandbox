@@ -24,10 +24,10 @@ def executeProgram(command, **options):
         return JudgeResult(JudgeResult.RE)
     return JudgeResult(JudgeResult.OK)
 
-def executeProgramDocker(command, **options):
+def executeProgramBackend(command, **options):
     if not 'dir' in options:
         options['dir'] = file.getRunDir()
-    running = langSupport.formatDockerHelper(command, **options)
+    running = langSupport.formatBackendHelper(command, **options)
     pwd = os.getcwd()
     cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     res = cp.stdout.split('\n')
@@ -46,8 +46,8 @@ def plainJudge(program, codeType, infile, outfile, **config):
     runHelper = langSupport.executeHelper[codeType]
     running = langSupport.formatHelper(runHelper, exefile=program)
     #runResult = executeProgram(running, stdin=istream, stdout=ostream, timeout=config['timeout'] / 1000.0)
-    #runResult = executeProgramDocker(running, src=program, stdin=inRedir, stdout=outRedir,
-    runResult = executeProgramDocker(None, dir=file.getRunDir(), src=program,
+    #runResult = executeProgramBackend(running, src=program, stdin=inRedir, stdout=outRedir,
+    runResult = executeProgramBackend(None, dir=file.getRunDir(), src=program,
         stdin=file.getRunDir() + inRedir, stdout=file.getRunDir() + outRedir,
         timeout=config['timeout'], memory=config['ram'])
     rp = runResult.value
@@ -83,7 +83,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
         return JudgeError(JudgeResult.FTE)
     
     #cps = subprocess.run(compiling, bufsize=0, timeout=10)
-    cps = executeProgramDocker(compiling, dir=file.getRunDir(), src=rsourceCodeName,
+    cps = executeProgramBackend(compiling, dir=file.getRunDir(), src=rsourceCodeName,
         stdin='/dev/null', stdout='/dev/null',
         timeout=config.g['compile-time'], memory=config.g['compile-memory'],
         noseccomp=None, multiprocess=None, copyback=exefileName)
