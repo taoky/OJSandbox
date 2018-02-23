@@ -15,11 +15,12 @@ RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list \
 && chmod 0444 /etc/java.policy
 
 ADD requirements.txt /judgeApp/requirements.txt
-ADD ./judgeApp/ /judgeApp
-WORKDIR judgeApp
+WORKDIR /judgeApp
 
 RUN mkdir -p /root/.config/pip && echo "[global]\nindex-url = https://mirrors.ustc.edu.cn/pypi/web/simple\nformat = columns" > /root/.config/pip/pip.conf \
-&& pip3 install -r requirements.txt \
-&& chmod 0555 safeJudger && chmod 0555 /judgeApp
+&& pip3 install -r requirements.txt
 
-ENTRYPOINT celery -A judgeApp worker --loglevel=info
+ADD . /judgeApp
+RUN chmod 0555 safeJudger && chmod 0555 /judgeApp
+
+ENTRYPOINT celery -A tasks worker --loglevel=info

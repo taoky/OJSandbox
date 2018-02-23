@@ -9,28 +9,26 @@ services:
         ports:
             - "5672:5672"
 
-    worker: # 执行用户程序的评测容器
+    judger: # 执行用户程序的评测容器
         build:
-            context: .
-            dockerfile: dockerfile_worker
-        volumes:
-            - .:/judgeApp
+            context: ./judger/
+            dockerfile: Dockerfile
         links:
             - rabbit
         depends_on:
             - rabbit
         pids_limit: 16
 
-    manager: # 处理评测结果 & 给 worker 发任务
+    web: # 网页端，给 worker 发任务
         build:
-            context: .
-            dockerfile: dockerfile_manager
-        volumes:
-            - .:/judgeApp
+            context: ./web/
+            dockerfile: Dockerfile
         links:
             - rabbit
-            - worker
+            - judger
         depends_on:
             - rabbit
-            - worker
+            - judger
+        ports:
+            - "5001:5001"
              
