@@ -78,11 +78,11 @@ void setNonPrivilegeUser(void) {
 	if (ojsGID == 0 || ojsUID == 0) {
 		initUser();
 	}
-	status = setgid(ojsGID);
+	status = setregid(ojsGID, ojsGID);
 	if (status == -1) {
 		errorExit(GIERR);
 	}
-	status = setuid(ojsUID);
+	status = setreuid(ojsUID, ojsUID);
 	if (status == -1) {
 		errorExit(UIERR);
 	}

@@ -13,19 +13,14 @@ services:
         build:
             context: ./judger/
             dockerfile: Dockerfile
-        links:
-            - rabbit
         depends_on:
             - rabbit
         pids_limit: 16
 
-    web: # 网页端，给 worker 发任务
+    web: # 网页端，给 judger 发任务
         build:
             context: ./web/
             dockerfile: Dockerfile
-        links:
-            - rabbit
-            - judger
         depends_on:
             - rabbit
             - judger
