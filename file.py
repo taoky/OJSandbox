@@ -27,10 +27,13 @@ def createWorkspace():
         # build ojs-alpha image
         client.images.build(path=".", tag="ojs-alpha")
         print("Build ojs-alpha image done.")
-        volume_path = str(Path("volume").resolve())
+        dirName = 'volume'
+        if not os.path.isdir(dirName):
+            os.mkdir(dirName)
+            os.system('chown -R {0}.{0} {1}'.format(999, dirName))
+        volume_path = str(Path(dirName).resolve())
         runDir = volume_path
         volumes = {volume_path: {"bind": "/volume", "mode": "rw"}}
-        os.system('chown -R {0}.{0} volume'.format(999))
         container = client.containers.run("ojs-alpha", detach=True, volumes=volumes, stdin_open=True)
         print("Container {0} is running...".format(container))
     except:
