@@ -12,7 +12,9 @@ def loadConfig():
     global g
     try:
         with open('config.json') as f:
-            g = json.loads(f.read())
+            fileconf = json.loads(f.read())
+            for key in fileconf:
+                g[key] = fileconf[key]
         print('Config loaded from config.json')
     except FileNotFoundError:
         print('Warning: config.json not found. Default config used.')

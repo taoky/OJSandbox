@@ -19,7 +19,7 @@ def createWorkspace():
         raise
     except:
         # Not implemented yet
-        raise
+        raise NotImplementedError
     if cp.returncode != 0:
         # This may be a bit confusing but just use as a wordaround
         raise FileNotFoundError("Failed to create workspace")
@@ -36,7 +36,7 @@ def cleanupWorkspace():
         raise
     except:
         # Not implemented yet
-        raise
+        raise NotImplementedError
     if cp.returncode != 0:
         # This may be a bit confusing but just use as a wordaround
         raise FileNotFoundError('Failed to cleanup workspace')
