@@ -66,7 +66,7 @@ void display_help(const char *a0)
         "--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.\n"
         "--allow-multi-process: (Optional) change process number limitation from 1 to 128.\n"
         "--exec-stderr: (Optional) This file will be the output (stderr) of the executed program.\n"
-        "--mem-rss-only: (Optional) Limit RSS (Resident Set Size) memory only, if --mem-limit is on\n."
+        "--mem-rss-only: (Optional) Limit RSS (Resident Set Size) memory only, if --mem-limit is on.\n"
         "--help or -h: (Optional) This will show this message.\n",
 		a0, a0);
     exit(0);
