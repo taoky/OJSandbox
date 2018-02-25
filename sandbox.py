@@ -30,7 +30,7 @@ def executeProgramDocker(command, **options):
     pwd = os.getcwd()
     # cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-    print(running)
+    #print(running)
 
     cp = file.container.exec_run(running, stderr=False)
     res = cp[1].decode().split('\n')
@@ -39,7 +39,7 @@ def executeProgramDocker(command, **options):
         # print(cp[0])
         res[0] = 'IE'
 
-    print(res)
+    #print(res)
     
     return JudgeResult(getattr(JudgeResult, res[0].strip()))
 
@@ -48,7 +48,7 @@ def plainJudge(program, codeType, infile, outfile, **config):
     outRedir = file.outFileName
     copy(infile, file.getRunDir() + inRedir)
 
-    # print("Copy file from {0} to {1}".format(infile, file.getRunDir() + inRedir))
+    #print("Copy file from {0} to {1}".format(infile, file.getRunDir() + inRedir))
 
     #istream = open(inRedir, 'r')
     #ostream = open(outRedir, 'w')
@@ -84,7 +84,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     rsourceFileName = file.getRunDir() + exefileName
     rsourceCodeName = directory + sourceFileName + sourceFileExt
     results = []
-    # print(rsourceCodeName, rsourceFileName)
+    #print(rsourceCodeName, rsourceFileName)
     copy(rsourceCodeName, file.getRunDir() + sourceFileName + sourceFileExt)
     try:
         compileHelper = langSupport.compileHelper[sourceFileExt.lower()][:]
@@ -95,7 +95,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     
     #cps = subprocess.run(compiling, bufsize=0, timeout=10)
     
-    print(compiling)
+    #print(compiling)
 
     cps = executeProgramDocker(compiling, # src=rsourceCodeName,
         stdin='/dev/null', stdout='/dev/null',
