@@ -45,7 +45,8 @@ backendHelper = {
     'multiprocess': ['--allow-multi-process'],
     'maxproc': ['--max-processes', '%'],
     'outsize': ['--output-file-size', '%'],
-    'copyback': ['--copy-back', '%']
+    'copyback': ['--copy-back', '%'],
+    'rssmem': ['--mem-rss-only']
     #'command': ['--exec-command', '--', '%'] # Special handling
 }
 
@@ -79,12 +80,14 @@ def formatBackendHelper(command, **args):
         args['maxproc'] = config.g['max-processes']
         args['outsize'] = config.g['out-size']
 
+    args['rssmem'] = None
     for key in args:
         try:
             arg = [i if i != '%' else str(args[key]) for i in backendHelper[key]]
             res += arg
         except KeyError:
             pass
+
     if not command is None:
         res += ['--exec-command', '--'] + command
     return res

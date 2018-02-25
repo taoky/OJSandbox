@@ -5,7 +5,6 @@ import sandbox
 import config
 import file
 import langSupport
-from judge import JudgeResult
 
 def OJRun():
     lPlayers = file.listOfPlayers()
@@ -31,7 +30,7 @@ def OJRun():
                 continue
             config = file.loadProblemConfig(filename)
             res = sandbox.safeJudge(filename, fileExtension, relaPath, config)
-            print('{} on {}: {}'.format(thisPlayer, config['title'], res))
+            print('{0} on {1}: {2} ({3})'.format(thisPlayer, config['title'], res, res.res))
 
 def OJReset():
     file.cleanupWorkspace()

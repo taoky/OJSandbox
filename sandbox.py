@@ -5,24 +5,9 @@ import compare
 import config
 import file
 import langSupport
-from judge import JudgeResult, JudgeError
+from judge import RunInfo, JudgeResult, JudgeError
 
 infoFile = file.workDir
-
-def writeResult(res, fe, reason, i):
-    res.append((i, reason))
-    if fe is None:
-        fe = reason
-    return fe
-
-def executeProgram(command, **options):
-    try:
-        cp = subprocess.run(command, **options)
-    except subprocess.TimeoutExpired:
-        return JudgeResult(JudgeResult.TLE)
-    if cp.returncode != 0:
-        return JudgeResult(JudgeResult.RE)
-    return JudgeResult(JudgeResult.OK)
 
 def executeProgramBackend(command, **options):
     if not 'dir' in options:
@@ -31,45 +16,42 @@ def executeProgramBackend(command, **options):
     pwd = os.getcwd()
     cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     res = cp.stdout.split('\n')
+    try:
+        stat = [int(i) for i in res[1].split(' ')]
+    except IndexError:
+        stat = [0] * 4
+    runInfo = RunInfo(stat[0], stat[3])
     if cp.returncode != 0:
-        #print(cp.stderr)
         res[0] = 'IE'
-    return JudgeResult(getattr(JudgeResult, res[0].strip()))
+    return JudgeResult(getattr(JudgeResult, res[0].strip()), runInfo)
 
 def plainJudge(program, codeType, infile, outfile, **config):
     inRedir = file.inFileName
     outRedir = file.outFileName
     copy(infile, file.getRunDir() + inRedir)
-    #istream = open(inRedir, 'r')
-    #ostream = open(outRedir, 'w')
-    #proFileName = os.path.splitext(i[0])[0]
     runHelper = langSupport.executeHelper[codeType]
     running = langSupport.formatHelper(runHelper, exefile=program)
-    #runResult = executeProgram(running, stdin=istream, stdout=ostream, timeout=config['timeout'] / 1000.0)
-    #runResult = executeProgramBackend(running, src=program, stdin=inRedir, stdout=outRedir,
     runResult = executeProgramBackend(None, dir=file.getRunDir(), src=program,
         stdin=file.getRunDir() + inRedir, stdout=file.getRunDir() + outRedir,
         timeout=config['timeout'], memory=config['ram'])
     rp = runResult.value
-    #istream.close()
-    #ostream.close()
+    runInfo = runResult.res
 
     forwardResults = [JudgeResult.RE, JudgeResult.TLE, JudgeResult.MLE, JudgeResult.FSE]
     if rp in forwardResults:
         file.safeRemove(file.getRunDir() + inRedir)
         file.safeRemove(file.getRunDir() + outRedir)
-        return JudgeResult(rp)
+        return JudgeResult(rp, runInfo)
     copy(file.getRunDir() + outRedir, os.getcwd())
 
     compareMethod = compare.getCompareMethod(config["compare"])
     cp = compareMethod(outfile, file.runDir + outRedir)
     file.safeRemove(outRedir) # cleanup
     if cp == False:
-        return JudgeResult(JudgeResult.WA)
-    return JudgeResult(JudgeResult.AC)
+        return JudgeResult(JudgeResult.WA, runInfo)
+    return JudgeResult(JudgeResult.AC, runInfo)
 
 def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
-    # WARNING: IT IS UNSAFE NOW!
     exefileName = 'out'
     rsourceFileName = file.getRunDir() + exefileName
     rsourceCodeName = directory + sourceFileName + sourceFileExt
@@ -77,33 +59,38 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     
     try:
         compileHelper = langSupport.compileHelper[sourceFileExt.lower()][:]
-        #compiling = langSupport.formatHelper(compileHelper, infile=rsourceCodeName, outfile=rsourceFileName)
         compiling = langSupport.formatHelper(compileHelper, infile=sourceFileName+sourceFileExt, outfile=exefileName)
     except KeyError as e:
         return JudgeError(JudgeResult.FTE)
     
-    #cps = subprocess.run(compiling, bufsize=0, timeout=10)
     cps = executeProgramBackend(compiling, dir=file.getRunDir(), src=rsourceCodeName,
         stdin='/dev/null', stdout='/dev/null',
         timeout=config.g['compile-time'], memory=config.g['compile-memory'],
         noseccomp=None, multiprocess=None, copyback=exefileName)
     if not JudgeResult.isOK(cps.value):
-        return JudgeError(JudgeResult.CE, results)
+        return JudgeError(JudgeResult.CE)
     proFiles = file.getProblemFiles(sourceFileName)
     firstError = None
+    runCount = 0
     for i in proFiles:
+        runCount += 1
         infile = file.getProblemDirectory(sourceFileName) + i[0]
         outfile = file.getProblemDirectory(sourceFileName) + i[1]
         proFileName = os.path.splitext(infile)[0]
         result = plainJudge(exefileName, sourceFileExt.lower(), infile, outfile, **problemConfig)
-        firstError = writeResult(results, firstError, result.value, proFileName)
-        if not firstError is None:
+        results.append(result)
+        if result.value != JudgeResult.AC:
+            firstError = result.value
             break
 
     if firstError is None:
-        firstError = JudgeResult.WA
-    os.remove(exefileName) # remove the compiler file
-    return JudgeResult(firstError, results)
+        firstError = JudgeResult.AC
+    os.remove(exefileName) # remove the binary file
+    sumInfo = RunInfo()
+    for i in results:
+        sumInfo += i.res
+    avgInfo = sumInfo / runCount
+    return JudgeResult(firstError, avgInfo)
 
 def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
     try:
@@ -117,4 +104,4 @@ def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
                 os.remove(e.res[i])
             except KeyError:
                 pass
-        return e.value, None
+        return e, None

@@ -1,3 +1,24 @@
+class RunInfo:
+    def __init__(self, time=0, mem=0):
+        self.time = time
+        self.mem = mem
+
+    def __str__(self):
+        return 'Time: {time}s, Mem: {mem} KiB'.format(
+            time=self.time/1000.0, mem=self.mem
+        )
+
+    def __add__(self, n):
+        return RunInfo(self.time+n.time, self.mem+n.mem)
+
+    def __iadd__(self, n):
+        self.time += n.time
+        self.mem += n.mem
+        return self
+
+    def __truediv__(self, n):
+        return RunInfo(self.time/n, self.mem//n)
+
 class JudgeResult:
     # 0: No exceptions
     AC = 0
