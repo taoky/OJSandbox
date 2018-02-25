@@ -51,23 +51,24 @@ static const struct option longOpts[] = {
 
 void display_help(const char *a0)
 {
-    log("This is the backend of the sandbox for oj.\n");
-    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] [--exec-command] [-- PROG [ARGS]]\n", a0);
-    log("or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] [--exec-command] [-- PROG [ARGS]]\n", a0);
-    log("--chroot-dir or -c: The directory that will be chroot(2)ed in.\n");
-    log("--exec-file or -e: The program (or source file) that will be executed or interpreted.\n");
-    log("--exec-command: (Optional) Enable the function to run command after '--'.\n");
-    log("--input or -i: The file that will be the input source.\n");
-    log("--output or -o: The file that will be the output (stdout) of the program.\n");
-    log("--log or -l: (Optional, stderr by default) The file that will be the output (stderr) of the sandbox (& program).\n");
-    log("--time-limit or -t: (Optional, unlimited by default) The time (ms) limit of the program.\n");
-    log("--mem-limit or -m: (Optional, unlimited by default) The memory size (MB) limit of the program.\n");
-    log("--disable-seccomp: (Optional) This will disable system call filter.\n");
-    log("--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.\n");
-    log("--allow-multi-process: (Optional) change process number limitation from 1 to 128.\n");
-    log("--exec-stderr: (Optional) This file will be the output (stderr) of the executed program.\n");
-    log("--mem-rss-only: (Optional) Limit RSS (Resident Set Size) memory only, if --mem-limit is on\n.");
-    log("--help or -h: (Optional) This will show this message.\n");
+    log("This is the backend of the sandbox for oj.\n"
+        "Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] [--exec-command] [-- PROG [ARGS]]\n"
+        "or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] [--exec-command] [-- PROG [ARGS]]\n"
+        "--chroot-dir or -c: The directory that will be chroot(2)ed in.\n"
+        "--exec-file or -e: The program (or source file) that will be executed or interpreted.\n"
+        "--exec-command: (Optional) Enable the function to run command after '--'.\n"
+        "--input or -i: The file that will be the input source.\n"
+        "--output or -o: The file that will be the output (stdout) of the program.\n"
+        "--log or -l: (Optional, stderr by default) The file that will be the output (stderr) of the sandbox (& program).\n"
+        "--time-limit or -t: (Optional, unlimited by default) The time (ms) limit of the program.\n"
+        "--mem-limit or -m: (Optional, unlimited by default) The memory size (MB) limit of the program.\n"
+        "--disable-seccomp: (Optional) This will disable system call filter.\n"
+        "--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.\n"
+        "--allow-multi-process: (Optional) change process number limitation from 1 to 128.\n"
+        "--exec-stderr: (Optional) This file will be the output (stderr) of the executed program.\n"
+        "--mem-rss-only: (Optional) Limit RSS (Resident Set Size) memory only, if --mem-limit is on\n."
+        "--help or -h: (Optional) This will show this message.\n",
+		a0, a0);
     exit(0);
 }
 
