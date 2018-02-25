@@ -28,9 +28,10 @@ def createWorkspace():
         client.images.build(path=".", tag="ojs-alpha")
         print("Build ojs-alpha image done.")
         dirName = 'volume'
+        ojsUid = 999
         if not os.path.isdir(dirName):
             os.mkdir(dirName)
-            os.system('chown -R {0}.{0} {1}'.format(999, dirName))
+            os.chown(dirName, ojsUid, ojsUid)
         volume_path = str(Path(dirName).resolve())
         runDir = volume_path
         volumes = {volume_path: {"bind": "/volume", "mode": "rw"}}
