@@ -3,7 +3,7 @@
 #include "secrules.h"
 
 pid_t son;
-static int son_exec = 0;
+static volatile int son_exec = 0;
 bool killedByTimer = false;
 bool memLimKilled = false;
 
