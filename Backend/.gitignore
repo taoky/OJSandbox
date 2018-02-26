@@ -2,5 +2,5 @@
 
 .vscode
 main
-gitversion.h
+config.h
 config.sh

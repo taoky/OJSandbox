@@ -7,7 +7,7 @@ int main(){
 	}
 	else if (child == 0){
 		char *args[2] = {"su", NULL};
-		execvp(args);
+		execvp(*args, args+1);
 		return 0;
 	}
 	else{

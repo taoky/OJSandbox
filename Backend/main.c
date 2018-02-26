@@ -1,7 +1,7 @@
 #include "main.h"
 #include "util.h"
 #include "secrules.h"
-#include "gitversion.h"
+#include "config.h"
 
 pid_t son;
 static volatile int son_exec = 0;
@@ -420,8 +420,8 @@ int main(int argc, char **argv)
         if (runArgs.timeLimit != 0)
         {
             itval.it_interval.tv_sec = itval.it_interval.tv_usec = 0; // only once
-            itval.it_value.tv_sec = runArgs.timeLimit / 1000;
-            itval.it_value.tv_usec = ((runArgs.timeLimit + 50) % 1000) * 1000; // Allow up to 50 ms of systematic error
+            itval.it_value.tv_sec = (runArgs.timeLimit + TL_MARGIN) / 1000;
+            itval.it_value.tv_usec = ((runArgs.timeLimit + TL_MARGIN) % 1000) * 1000; // Allow up to 50 ms of systematic error
             if (setitimer(ITIMER_REAL, &itval, NULL) == -1)
             {
                 perror("setitimer error");

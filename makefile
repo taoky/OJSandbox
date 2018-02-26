@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-CACHES = __pycache
+CACHES = __pycache__
 
 all: Backend
 
