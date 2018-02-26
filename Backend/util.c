@@ -17,6 +17,7 @@ const char *const CPERR = "sendfile() error";
 const char *const USERR = "(User) ojs's gid or uid error";
 const char *const CGERR = "cgroup error";
 const char *const SCERR = "seccomp error";
+const char *const CHERR = "chroot error";
 
 const char *const RES_OK = "OK";
 const char *const RES_RE = "RE";

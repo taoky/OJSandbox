@@ -29,6 +29,7 @@ extern const char *const CPERR;
 extern const char *const USERR;
 extern const char *const CGERR;
 extern const char *const SCERR;
+extern const char *const CHERR;
 
 extern const char *const RES_OK;
 extern const char *const RES_RE;

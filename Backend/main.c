@@ -167,7 +167,7 @@ void option_handle(int argc, char **argv)
             }
             if (strcmp("mem-rss-only", longOpts[longIndex].name) == 0)
             {
-                runArgs.isMemLimitRSS = true;
+				// Backward compatibility
             }
             if (strcmp("max-processes", longOpts[longIndex].name) == 0)
             {
@@ -198,11 +198,7 @@ void option_handle(int argc, char **argv)
         log("Missing argument(s).\nUse %s -h or %s --help to get help.\n", argv[0], argv[0]);
         exit(-1);
     }
-    if (runArgs.isMemLimitRSS && runArgs.memLimit == 0)
-    {
-        log("Missing --mem-limit when --mem-rss-only is on.\n");
-        exit(-1);
-    }
+	runArgs.isMemLimitRSS = true;
 }
 
 void ready(int sig)
@@ -375,18 +371,24 @@ int main(int argc, char **argv)
         // child
 
         // set rlimit
-        setLimit(runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5),
+		// runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)
+        setLimit(0, // Virtual memory not limited
                  runArgs.timeLimit == 0 ? 0 : (int)(runArgs.timeLimit / 1000.0 + 1),
                  runArgs.isMultiProcess ? maxProcesses : 1,
                  maxOutputFile,
-                 runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
+                 0); // allow 1 process, 16 MB file size, rough time & memory limit
         // redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
 
         logRedirect(runArgs.execStderr);
         // chroot
-        chroot(runArgs.chrootDir);
-        chdir("/tmp");
+		int chResult = 0;
+        chResult |= chroot(runArgs.chrootDir);
+        chResult |= chdir("/tmp");
+		if (chResult != 0)
+		{
+			errorExit(CHERR);
+		}
         // set uid & gid to nobody
         setNonPrivilegeUser();
 
@@ -412,8 +414,8 @@ int main(int argc, char **argv)
     else
     {
         // parent
-        char procStat[12 + 10] = {};
-        sprintf(procStat, "/proc/%d/stat", son);
+        char procStat[13 + 10] = {};
+        snprintf(procStat, sizeof(procStat),  "/proc/%d/statm", son);
         // set timer
         signal(SIGALRM, killChild);
         struct itimerval itval;
@@ -434,8 +436,7 @@ int main(int argc, char **argv)
         // wait & cleanup
         struct rusage sonUsage;
         int status;
-        unsigned long memory_max = 0, memory_now = 0;         // virt mem
-        unsigned long rss_memory_max = 0, rss_memory_now = 0; // rss mem
+        unsigned long memory_max = 0, memory_now = 0; // rss mem
         int pagesize = getpagesize();
         while (wait3(&status, WUNTRACED | WNOHANG, &sonUsage) == 0)
         {
@@ -443,34 +444,22 @@ int main(int argc, char **argv)
             if (procFile)
             {
                 // prevent segfault
-                fscanf(procFile, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %lu %lu", &memory_now, &rss_memory_now);
+                if (fscanf(procFile, "%*u %lu", &memory_now) < 1)
+				{
+					memory_now = 0;
+				}
                 fclose(procFile);
             }
-            if (!runArgs.isMemLimitRSS)
-            {
-                if (memory_now > memory_max)
-                {
-                    memory_max = memory_now;
-                    if (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 20))
-                    {
-                        killChild(SIGUSR1); // mem > limit
-                    }
-                }
-            }
-            else
-            {
-                rss_memory_now *= pagesize / (1 << 10);
-                if (rss_memory_now > rss_memory_max)
-                {
-                    rss_memory_max = rss_memory_now;
-                    if (runArgs.memLimit != 0 && rss_memory_max > runArgs.memLimit * (1 << 10))
-                    {
-                        killChild(SIGUSR1);
-                    }
-                }
-            }
+			memory_now *= pagesize / (1 << 10);
+			if (memory_now > memory_max)
+			{
+				memory_max = memory_now;
+				if (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 10))
+				{
+					killChild(SIGUSR1);
+				}
+			}
         }
-        memory_max /= (1 << 10); // accurate virt usage
         int cpuTime = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
         // long maxrss = sonUsage.ru_maxrss;
         gettimeofday(&progEnd, NULL);
@@ -522,7 +511,7 @@ int main(int argc, char **argv)
             killChild(WSTOPSIG(status));
             puts(RES_RE);
         }
-        printf("%d %lu %d %lu\n", actualTime, memory_max, cpuTime, rss_memory_max);
+        printf("%d %lu %d %lu\n", actualTime, memory_max, cpuTime, memory_max);
 
         free(chrootTmp);
         free(copyprogTo);
