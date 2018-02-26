@@ -1,5 +1,6 @@
 # This .gitignore is for this specific directory
 
+.vscode
 main
 gitversion.h
 config.sh
