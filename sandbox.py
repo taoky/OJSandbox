@@ -14,7 +14,7 @@ def executeProgramBackend(command, **options):
         options['dir'] = file.getRunDir()
     running = langSupport.formatBackendHelper(command, **options)
     pwd = os.getcwd()
-    cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=file.fnull, universal_newlines=True)
     res = cp.stdout.split('\n')
     try:
         stat = [int(i) for i in res[1].split(' ')]

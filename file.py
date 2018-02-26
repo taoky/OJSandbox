@@ -4,6 +4,7 @@ import json
 import shutil as sh
 
 workDir = os.getcwd() + '/'
+fnull = open(os.devnull, 'w')
 runDir = None
 resourceDir = os.getcwd() + '/Backend/'
 initExe = resourceDir + 'init.sh'

@@ -252,7 +252,6 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     }
     if (maxCPUTime != 0)
     {
-		log("%d\n", maxCPUTime);
         setrlimStruct(maxCPUTime, &max_cpu_time);
     }
     if (maxProcessNum != 0)
