@@ -1,6 +1,7 @@
 #include "main.h"
 #include "util.h"
 #include "secrules.h"
+#include "gitversion.h"
 
 pid_t son;
 static volatile int son_exec = 0;
@@ -49,25 +50,41 @@ static const struct option longOpts[] = {
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
+void display_title(void){
+    log("OJ sandbox backend (version " GITVERSION_STR ", commit " GITCOMMIT_STR ")\n\n");
+}
+
 void display_help(const char *a0)
 {
-    log("This is the backend of the sandbox for oj.\n"
-        "Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] [--exec-command] [-- PROG [ARGS]]\n"
-        "or: %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] [--exec-command] [-- PROG [ARGS]]\n"
-        "--chroot-dir or -c: The directory that will be chroot(2)ed in.\n"
-        "--exec-file or -e: The program (or source file) that will be executed or interpreted.\n"
-        "--exec-command: (Optional) Enable the function to run command after '--'.\n"
-        "--input or -i: The file that will be the input source.\n"
-        "--output or -o: The file that will be the output (stdout) of the program.\n"
-        "--log or -l: (Optional, stderr by default) The file that will be the output (stderr) of the sandbox (& program).\n"
-        "--time-limit or -t: (Optional, unlimited by default) The time (ms) limit of the program.\n"
-        "--mem-limit or -m: (Optional, unlimited by default) The memory size (MB) limit of the program.\n"
-        "--disable-seccomp: (Optional) This will disable system call filter.\n"
-        "--copy-back: (Optional, usually required when compiling) The following argument will be copied back to the working directory.\n"
-        "--allow-multi-process: (Optional) change process number limitation from 1 to 128.\n"
-        "--exec-stderr: (Optional) This file will be the output (stderr) of the executed program.\n"
-        "--mem-rss-only: (Optional) Limit RSS (Resident Set Size) memory only, if --mem-limit is on.\n"
-        "--help or -h: (Optional) This will show this message.\n",
+    display_title();
+    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] [--exec-command] [-- PROG [ARGS]]\n"
+        "       %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] [--exec-command] [-- PROG [ARGS]]\n"
+        "  -c  --chroot-dir     The directory that will be chroot(2)ed in.\n"
+        "  -e  --exec-file      The program (or source file) that will be executed or\n"
+        "                       interpreted.\n"
+        "      --exec-command   Enable the function to run command after '--'.\n"
+        "  -i  --input          The file that will be the input source.\n"
+        "  -o  --output         The file that will be the output (stdout) of the\n"
+        "                       program.\n"
+        "  -l  --log            (Optional, stderr by default) The file that will be the\n"
+        "                       output (stderr) of the sandbox and program.\n"
+        "  -t  --time-limit     (Optional, unlimited by default) The time (ms) limit of\n"
+        "                       the program.\n"
+        "  -m  --mem-limit      (Optional, unlimited by default) The memory size (MB)"
+        "                       limit of the program.\n"
+        "      --disable-seccomp\n"
+        "                       (Optional) This will disable secure computing mode,\n"
+        "                       the system call filter.\n"
+        "      --copy-back      (Optional, usually required when compiling)"
+        "                       The following argument will be copied back to the\n"
+        "                       working directory.\n"
+        "      --allow-multi-process\n"
+        "                       (Optional) Allow up to 128 processes to run.\n"
+        "      --exec-stderr    (Optional) This file will be the output (stderr) of the\n"
+        "                       executed program.\n"
+        "      --mem-rss-only   (Optional) Limit RSS (Resident Set Size) memory only, if\n"
+        "                       --mem-limit is on.\n"
+        "  -h  --help           (Optional) This will show this message.\n",
 		a0, a0);
     exit(0);
 }
@@ -177,6 +194,7 @@ void option_handle(int argc, char **argv)
     // check
     if (runArgs.chrootDir == NULL || runArgs.execFileName == NULL || runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
     {
+        display_title();
         log("Missing argument(s).\nUse %s -h or %s --help to get help.\n", argv[0], argv[0]);
         exit(-1);
     }
@@ -234,6 +252,7 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     }
     if (maxCPUTime != 0)
     {
+		log("%d\n", maxCPUTime);
         setrlimStruct(maxCPUTime, &max_cpu_time);
     }
     if (maxProcessNum != 0)
@@ -324,12 +343,12 @@ void logRedirect(char logpath[])
 
 int main(int argc, char **argv)
 {
+    option_handle(argc, argv);
     if (!isRootUser())
     {
         log("This program requires root user.\n");
         exit(-1);
     }
-    option_handle(argc, argv);
     logRedirect(runArgs.logFileName);
     signal(SIGUSR1, ready);
 
@@ -358,7 +377,7 @@ int main(int argc, char **argv)
 
         // set rlimit
         setLimit(runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5),
-                 runArgs.timeLimit == 0 ? 0 : (int)((runArgs.timeLimit + 1000) / 1000),
+                 runArgs.timeLimit == 0 ? 0 : (int)(runArgs.timeLimit / 1000.0 + 1),
                  runArgs.isMultiProcess ? maxProcesses : 1,
                  maxOutputFile,
                  runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
@@ -403,7 +422,7 @@ int main(int argc, char **argv)
         {
             itval.it_interval.tv_sec = itval.it_interval.tv_usec = 0; // only once
             itval.it_value.tv_sec = runArgs.timeLimit / 1000;
-            itval.it_value.tv_usec = (runArgs.timeLimit % 1000 + 500) * 1000;
+            itval.it_value.tv_usec = ((runArgs.timeLimit + 50) % 1000) * 1000; // Allow up to 50 ms of systematic error
             if (setitimer(ITIMER_REAL, &itval, NULL) == -1)
             {
                 perror("setitimer error");

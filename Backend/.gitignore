@@ -1,0 +1,5 @@
+# This .gitignore is for this specific directory
+
+main
+gitversion.h
+config.sh
