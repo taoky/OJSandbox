@@ -17,9 +17,9 @@
         </tr>
         {% for record in records %}
         <tr>
-            <th><a href='{{ record.id_url }}'>{{ record.id }}</a></th>
-            <th>{{ record.status }}</th>
-            <th>{{ record.result }}</th>
+            <td><a href='{{ record.id_url }}'>{{ record.id }}</a></td>
+            <td>{{ record.status }}</td>
+            <td>{{ record.result }}</td>
         </tr>
         {% endfor %}
     </table>
