@@ -1,0 +1,1 @@
+To simplify the structure, we substituted database for this simple directory.

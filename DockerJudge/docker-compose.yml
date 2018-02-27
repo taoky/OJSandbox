@@ -9,12 +9,21 @@ services:
         ports:
             - "5672:5672"
 
+    redis: # redis 数据库
+        hostname: redis
+        image: redis
+        ports:
+            - "6379:6379"
+
     judger: # 执行用户程序的评测容器
         build:
             context: ./judger/
             dockerfile: Dockerfile
         depends_on:
             - rabbit
+            - redis
+        volumes:
+            - ./problems:/problems:ro
         pids_limit: 16
 
     web: # 网页端，给 judger 发任务
@@ -23,7 +32,10 @@ services:
             dockerfile: Dockerfile
         depends_on:
             - rabbit
+            - redis
             - judger
+        volumes:
+            - ./problems:/problems:ro
         ports:
             - "5001:5001"
              

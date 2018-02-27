@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>The status of the demo OJ</title>
+</head>
+
+<body>
+    <table>
+        <tr>
+            <th>UUID</th>
+            <th>Status</th>
+            <th>Result</th>
+        </tr>
+        {% for record in records %}
+        <tr>
+            <th>{{ record.id }}</th>
+            <th>{{ record.status }}</th>
+            <th>{{ record.result }}</th>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>
