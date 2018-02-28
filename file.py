@@ -8,7 +8,7 @@ fnull = open(os.devnull, 'w')
 runDir = None
 resourceDir = os.getcwd() + '/Backend/'
 initExe = resourceDir + 'init.sh'
-backendExe = resourceDir + 'main'
+backendExe = resourceDir + 'safeJudger'
 inFileName = 'in.tmp'
 outFileName = 'out.tmp'
 

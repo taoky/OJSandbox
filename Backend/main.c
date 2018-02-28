@@ -51,7 +51,7 @@ static const struct option longOpts[] = {
     {NULL, no_argument, NULL, 0}};
 
 void display_title(void){
-    log("OJ sandbox backend (version " GITVERSION_STR ", commit " GITCOMMIT_STR ")\n\n");
+    log("OJ sandbox backend (version " GITVERSION_STR ", commit " GITCOMMIT_STR ", " __DATE__ " at " __TIME__ ")\n\n");
 }
 
 void display_help(const char *a0)
@@ -84,7 +84,8 @@ void display_help(const char *a0)
         "                       executed program.\n"
         "      --mem-rss-only   (Optional) Limit RSS (Resident Set Size) memory only, if\n"
         "                       --mem-limit is on.\n"
-        "  -h  --help           (Optional) This will show this message.\n",
+        "\n"
+        "  -h  --help           Show this help message and quit.\n",
 		a0, a0);
     exit(0);
 }

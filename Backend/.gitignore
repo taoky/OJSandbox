@@ -1,6 +1,6 @@
 # This .gitignore is for this specific directory
 
 .vscode
-main
+safeJudger
 config.h
 config.sh

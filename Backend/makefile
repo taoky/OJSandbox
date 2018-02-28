@@ -1,16 +1,18 @@
 .PHONY: all clean
 
-all: main
-
 CC := gcc
 CFLAGS := -O3 -Wall -s
 LDFLAGS := -lseccomp
-OBJS = main.o secrules.o util.o
+
 CONFIG = config.h
+OBJS = main.o secrules.o util.o
+BIN = safeJudger
 
 CFG_TL_MARGIN ?= 50
 
-main: $(CONFIG) $(OBJS)
+all: $(BIN)
+
+$(BIN): $(CONFIG) $(OBJS)
 	${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
 
 %.o: %.c
@@ -22,4 +24,4 @@ config.h:
 	echo "#define TL_MARGIN $(CFG_TL_MARGIN)" >> $@
 
 clean:
-	rm -f main $(OBJS) $(CONFIG)
+	rm -f $(BIN) $(OBJS) $(CONFIG)
