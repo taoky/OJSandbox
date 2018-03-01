@@ -1,7 +1,7 @@
 theme: jekyll-theme-modernist
 
 title: Online Judger Sandbox
-description: A sandbox designed to judge OI programs safely
+description: An experimental OJ backend for the freshman project assignment
 author: taoky & iBug
 show_downloads: true
 
