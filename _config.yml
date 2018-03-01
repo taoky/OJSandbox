@@ -1,1 +1,10 @@
 theme: jekyll-theme-modernist
+
+title: Online Judger Sandbox
+description: A sandbox designed to judge OI programs safely
+author: taoky & iBug
+show_downloads: true
+
+github:
+  zip_url: https://github.com/taoky/OJSandbox/archive/master.zip
+  tar_url: https://github.com/taoky/OJSandbox/archive/master.tar.gz
