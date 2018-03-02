@@ -10,7 +10,8 @@ UNKNOWN = 0
 langs = {
     '.c': COMPILED,
     '.cpp': COMPILED,
-    #'.py': INTERPRETED,
+    '.py': INTERPRETED,
+    '.java': MIXED,
 }
 
 # '%i' is input file
@@ -21,14 +22,14 @@ compileHelper = {
     '.c': ['/usr/bin/gcc', '-Wall', '-O3', '%i', '-o', '%o'],
     '.cpp': ['/usr/bin/g++', '-Wall', '-O3', '%i', '-o', '%o'],
     '.py': ['/bin/cp', '%i', '%o'],
-    '.java': ['javac', '%i', '-o', '%o']
+    '.java': ['javac', '%i', '-o', '%o'],
 }
 
 executeHelper = {
     '.c': ['%e'],
     '.cpp': ['%e'],
     '.py': ['python3', '%e'],
-    '.java': ['javaw', '%e']
+    '.java': ['javaw', '%e'],
 }
 
 backendExe = ['sudo', file.backendExe]

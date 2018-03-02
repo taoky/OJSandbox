@@ -3,6 +3,8 @@
 #include "secrules.h"
 #include "config.h"
 
+#define TITLE "OJ sandbox backend (version " GITVERSION_STR ", commit " GITCOMMIT_STR ", " __DATE__ " at " __TIME__ ")"
+
 pid_t son;
 static volatile int son_exec = 0;
 bool killedByTimer = false;
@@ -29,7 +31,7 @@ struct runArgs_t
     bool isMemLimitRSS;      // --mem-rss-only
 } runArgs;
 
-static const char * const optString = "+c:e:i:o:t:m:l:h?";
+static const char * const optString = "+c:e:i:o:t:m:l:hv?";
 
 static const struct option longOpts[] = {
     {"chroot-dir", required_argument, NULL, 'c'},
@@ -48,17 +50,30 @@ static const struct option longOpts[] = {
     {"max-processes", required_argument, NULL, 0},
     {"output-file-size", required_argument, NULL, 0},
     {"help", no_argument, NULL, 'h'},
+    {"version", no_argument, NULL, 'v'},
     {NULL, no_argument, NULL, 0}};
 
-void display_title(void){
-    log("OJ sandbox backend (version " GITVERSION_STR ", commit " GITCOMMIT_STR ", " __DATE__ " at " __TIME__ ")\n\n");
+void display_version(const char *a0)
+{
+    // Strip everything before the last slash to get the base name
+    const char * pname = a0 + strlen(a0);
+    for (int i = strlen(a0); i > 0; i--)
+    {
+        if (*--pname == '/')
+        {
+            ++pname;
+            break;
+        }
+    }
+    log("%s, " TITLE "\n", pname);
+    exit(0);
 }
 
 void display_help(const char *a0)
 {
-    display_title();
-    log("Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] [--exec-command] [-- PROG [ARGS]]\n"
-        "       %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] [--exec-command] [-- PROG [ARGS]]\n"
+    log(TITLE "\n\n"
+        "Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h|-v] [--exec-command] [-- PROG [ARGS]]\n"
+        "       %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help|--version] [--exec-command] [-- PROG [ARGS]]\n"
         "  -c  --chroot-dir     The directory that will be chroot(2)ed in.\n"
         "  -e  --exec-file      The program (or source file) that will be executed or\n"
         "                       interpreted.\n"
@@ -70,12 +85,12 @@ void display_help(const char *a0)
         "                       output (stderr) of the sandbox and program.\n"
         "  -t  --time-limit     (Optional, unlimited by default) The time (ms) limit of\n"
         "                       the program.\n"
-        "  -m  --mem-limit      (Optional, unlimited by default) The memory size (MB)"
+        "  -m  --mem-limit      (Optional, unlimited by default) The memory size (MB)\n"
         "                       limit of the program.\n"
         "      --disable-seccomp\n"
         "                       (Optional) This will disable secure computing mode,\n"
         "                       the system call filter.\n"
-        "      --copy-back      (Optional, usually required when compiling)"
+        "      --copy-back      (Optional, usually required when compiling)\n"
         "                       The following argument will be copied back to the\n"
         "                       working directory.\n"
         "      --allow-multi-process\n"
@@ -85,7 +100,8 @@ void display_help(const char *a0)
         "      --mem-rss-only   (Optional) Limit RSS (Resident Set Size) memory only, if\n"
         "                       --mem-limit is on.\n"
         "\n"
-        "  -h  --help           Show this help message and quit.\n",
+        "  -h  --help           Show this help message and quit.\n"
+        "  -v  --version        Show version information and quit.\n",
 		a0, a0);
     exit(0);
 }
@@ -145,6 +161,9 @@ void option_handle(int argc, char **argv)
         case '?':
             display_help(argv[0]);
             break;
+        case 'v':
+            display_version(argv[0]);
+            break;
         case 0:
             if (strcmp("disable-seccomp", longOpts[longIndex].name) == 0)
             {
@@ -195,7 +214,7 @@ void option_handle(int argc, char **argv)
     // check
     if (runArgs.chrootDir == NULL || runArgs.execFileName == NULL || runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
     {
-        display_title();
+        log(TITLE "\n\n");
         log("Missing argument(s).\nUse %s -h or %s --help to get help.\n", argv[0], argv[0]);
         exit(-1);
     }
