@@ -5,6 +5,7 @@ import sandbox
 import config
 import file
 import langSupport
+from debug import dprint
 
 def OJRun():
     lPlayers = file.listOfPlayers()
@@ -42,4 +43,8 @@ if __name__ == '__main__':
         if sys.argv[1] == 'cleanup':
             OJReset()
             exit(0)
+        elif sys.argv[1] == 'debug':
+            dprint("test")
+            dprint.enable()
+            dprint("test")
     OJRun()

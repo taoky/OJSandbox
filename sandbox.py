@@ -6,6 +6,7 @@ import config
 import file
 import langSupport
 from judge import RunInfo, JudgeResult, JudgeError
+from debug import dprint
 
 infoFile = file.workDir
 
@@ -14,8 +15,12 @@ def executeProgramBackend(command, **options):
         options['dir'] = file.getRunDir()
     running = langSupport.formatBackendHelper(command, **options)
     pwd = os.getcwd()
-    cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=file.fnull, universal_newlines=True)
+    cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     res = cp.stdout.split('\n')
+
+    dprint("stdout: {}".format(res))
+    dprint("stderr: {}".format(cp.stderr.split('\n')))
+
     try:
         stat = [int(i) for i in res[1].split(' ')]
     except IndexError:
