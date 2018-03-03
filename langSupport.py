@@ -22,14 +22,14 @@ compileHelper = {
     '.c': ['/usr/bin/gcc', '-Wall', '-O3', '%i', '-o', '%o'],
     '.cpp': ['/usr/bin/g++', '-Wall', '-O3', '%i', '-o', '%o'],
     '.py': ['/bin/cp', '%i', '%o'],
-    '.java': ['javac', '%i', '-o', '%o'],
+    '.java': ['/usr/bin/javac', '%i', '-o', '%o'],
 }
 
 executeHelper = {
     '.c': ['%e'],
     '.cpp': ['%e'],
-    '.py': ['python3', '%e'],
-    '.java': ['javaw', '%e'],
+    '.py': ['/usr/bin/python3', '%e'],
+    '.java': ['/usr/bin/java', '%e'],
 }
 
 backendExe = ['sudo', file.backendExe]
@@ -89,7 +89,7 @@ def formatBackendHelper(command, **args):
         except KeyError:
             pass
 
-    if not command is None:
+    if command is not None:
         res += ['--exec-command', '--'] + command
     return res
 

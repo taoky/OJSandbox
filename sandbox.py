@@ -39,7 +39,7 @@ def plainJudge(program, codeType, infile, outfile, **config):
     copy(infile, file.getRunDir() + inRedir)
     runHelper = langSupport.executeHelper[codeType]
     running = langSupport.formatHelper(runHelper, exefile=program)
-    runResult = executeProgramBackend(None, dir=file.getRunDir(), src=program,
+    runResult = executeProgramBackend(running, dir=file.getRunDir(), src=program,
         stdin=file.getRunDir() + inRedir, stdout=file.getRunDir() + outRedir,
         timeout=config['timeout'], memory=config['ram'])
     rp = runResult.value
