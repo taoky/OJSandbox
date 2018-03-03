@@ -15,6 +15,8 @@
 #include <fcntl.h>
 #include <pwd.h>
 
+#define log(...) fprintf(stderr, __VA_ARGS__)
+
 extern const char *const RLERR;
 extern const char *const GIERR;
 extern const char *const UIERR;
@@ -42,7 +44,7 @@ extern gid_t ojsGID;
 
 bool isRootUser(void);
 void errorExit(const char *str);
-void copyFile(const char *from, const char *to);
+int copyFile(const char *from, const char *to);
 void initUser(void);
 void setNonPrivilegeUser(void);
 char *pathCat(const char *path, const char *fileName);

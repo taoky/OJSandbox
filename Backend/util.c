@@ -34,26 +34,31 @@ void errorExit(const char *str) {
 	exit(-1);
 }
 
-void copyFile(const char *from, const char *to) {
+int copyFile(const char *from, const char *to) {
 	int fd_in, fd_out;
 	struct stat st;
 	off_t offset = 0;
 	fd_in = open(from, O_RDONLY);
 	if (fd_in == -1) {
-		errorExit(FIERR);
+		log(FIERR);
+		return -1;
 	}
 	if (fstat(fd_in, &st) == -1) {
-		errorExit(FSERR);
+		log(FSERR);
+		return -1;
 	}
 	fd_out = open(to, O_CREAT | O_WRONLY, st.st_mode);
 	if (fd_out == -1) {
-		errorExit(FIERR);
+		log(FIERR);
+		return -1;
 	}
 	if (sendfile(fd_out, fd_in, &offset, st.st_size) == -1) {
-		errorExit(CPERR);
+		log(CPERR);
+		return -1;
 	}
 	close(fd_in);
 	close(fd_out);
+	return 0;
 }
 
 void initUser(void) {
