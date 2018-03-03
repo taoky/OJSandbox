@@ -44,7 +44,5 @@ if __name__ == '__main__':
             OJReset()
             exit(0)
         elif sys.argv[1] == 'debug':
-            dprint("test")
             dprint.enable()
-            dprint("test")
     OJRun()

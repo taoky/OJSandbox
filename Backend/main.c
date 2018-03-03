@@ -28,7 +28,7 @@ struct runArgs_t
     bool isSeccompDisabled;  // --disable-seccomp, optional
     bool isCommandEnabled;   // --exec-command
     bool isMultiProcess;     // --allow-multi-process
-    bool isMemLimitRSS;      // --mem-rss-only
+    bool isLimitVM;          // --enable-vm-limit
 } runArgs;
 
 static const char * const optString = "+c:e:i:o:t:m:l:hv?";
@@ -46,9 +46,9 @@ static const struct option longOpts[] = {
     {"copy-back", required_argument, NULL, 0},
     {"allow-multi-process", no_argument, NULL, 0},
     {"exec-stderr", required_argument, NULL, 0},
-    {"mem-rss-only", no_argument, NULL, 0},
-    {"max-processes", required_argument, NULL, 0},
-    {"output-file-size", required_argument, NULL, 0},
+    {"enable-vm-limit", no_argument, NULL, 0},
+    // {"max-processes", required_argument, NULL, 0},
+    // {"output-file-size", required_argument, NULL, 0},
     {"help", no_argument, NULL, 'h'},
     {"version", no_argument, NULL, 'v'},
     {NULL, no_argument, NULL, 0}};
@@ -97,7 +97,8 @@ void display_help(const char *a0)
         "                       (Optional) Allow up to 128 processes to run.\n"
         "      --exec-stderr    (Optional) This file will be the output (stderr) of the\n"
         "                       executed program.\n"
-        "      --mem-rss-only   (Optional) Limit RSS (Resident Set Size) memory only, if\n"
+        "      --enable-vm-limit\n"
+        "                       (Optional) Limit VM (Virtual Memory) only, if\n"
         "                       --mem-limit is on.\n"
         "\n"
         "  -h  --help           Show this help message and quit.\n"
@@ -111,7 +112,7 @@ void option_handle(int argc, char **argv)
     // init runArgs
     runArgs.timeLimit = runArgs.memLimit = 0;
     runArgs.chrootDir = runArgs.execFileName = runArgs.copyBackFileName = runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
-    runArgs.isSeccompDisabled = runArgs.isCommandEnabled = runArgs.isMultiProcess = runArgs.isMemLimitRSS = false;
+    runArgs.isSeccompDisabled = runArgs.isCommandEnabled = runArgs.isMultiProcess = runArgs.isLimitVM = false;
     runArgs.execCommand = (char **)NULL;
     runArgs.execStderr = NULL;
     int longIndex;
@@ -185,9 +186,9 @@ void option_handle(int argc, char **argv)
             {
                 runArgs.execStderr = optarg;
             }
-            if (strcmp("mem-rss-only", longOpts[longIndex].name) == 0)
+            if (strcmp("enable-vm-limit", longOpts[longIndex].name) == 0)
             {
-				// Backward compatibility
+				runArgs.isLimitVM = true;
             }
             if (strcmp("max-processes", longOpts[longIndex].name) == 0)
             {
@@ -218,7 +219,6 @@ void option_handle(int argc, char **argv)
         log("Missing argument(s).\nUse %s -h or %s --help to get help.\n", argv[0], argv[0]);
         exit(-1);
     }
-	runArgs.isMemLimitRSS = true;
 }
 
 void ready(int sig)
@@ -392,7 +392,7 @@ int main(int argc, char **argv)
 
         // set rlimit
 		// runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)
-        setLimit(0, // Virtual memory not limited
+        setLimit(runArgs.memLimit == 0 || !runArgs.isLimitVM ? 0 : (runArgs.memLimit * 1.5), // Virtual memory not limited
                  runArgs.timeLimit == 0 ? 0 : (int)(runArgs.timeLimit / 1000.0 + 1),
                  runArgs.isMultiProcess ? maxProcesses : 1,
                  maxOutputFile,

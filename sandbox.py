@@ -71,7 +71,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     cps = executeProgramBackend(compiling, dir=file.getRunDir(), src=rsourceCodeName,
         stdin='/dev/null', stdout='/dev/null',
         timeout=config.g['compile-time'], memory=config.g['compile-memory'],
-        noseccomp=None, multiprocess=None, copyback=exefileName)
+        noseccomp=None, multiprocess=None, copyback=exefileName, vmlimit=None)
     if not JudgeResult.isOK(cps.value):
         return JudgeError(JudgeResult.CE)
     proFiles = file.getProblemFiles(sourceFileName)

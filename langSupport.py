@@ -47,7 +47,7 @@ backendHelper = {
     'maxproc': ['--max-processes', '%'],
     'outsize': ['--output-file-size', '%'],
     'copyback': ['--copy-back', '%'],
-    'rssmem': ['--mem-rss-only']
+    'vmlimit': ['--enable-vm-limit']
     #'command': ['--exec-command', '--', '%'] # Special handling
 }
 
