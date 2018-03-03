@@ -40,20 +40,20 @@ int copyFile(const char *from, const char *to) {
 	off_t offset = 0;
 	fd_in = open(from, O_RDONLY);
 	if (fd_in == -1) {
-		log(FIERR);
+		perror(FIERR);
 		return -1;
 	}
 	if (fstat(fd_in, &st) == -1) {
-		log(FSERR);
+		perror(FSERR);
 		return -1;
 	}
 	fd_out = open(to, O_CREAT | O_WRONLY, st.st_mode);
 	if (fd_out == -1) {
-		log(FIERR);
+		perror(FIERR);
 		return -1;
 	}
 	if (sendfile(fd_out, fd_in, &offset, st.st_size) == -1) {
-		log(CPERR);
+		perror(CPERR);
 		return -1;
 	}
 	close(fd_in);

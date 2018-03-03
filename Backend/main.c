@@ -47,8 +47,8 @@ static const struct option longOpts[] = {
     {"allow-multi-process", no_argument, NULL, 0},
     {"exec-stderr", required_argument, NULL, 0},
     {"enable-vm-limit", no_argument, NULL, 0},
-    // {"max-processes", required_argument, NULL, 0},
-    // {"output-file-size", required_argument, NULL, 0},
+    {"max-processes", required_argument, NULL, 0},
+    {"output-file-size", required_argument, NULL, 0},
     {"help", no_argument, NULL, 'h'},
     {"version", no_argument, NULL, 'v'},
     {NULL, no_argument, NULL, 0}};
@@ -85,7 +85,7 @@ void display_help(const char *a0)
         "                       output (stderr) of the sandbox and program.\n"
         "  -t  --time-limit     (Optional, unlimited by default) The time (ms) limit of\n"
         "                       the program.\n"
-        "  -m  --mem-limit      (Optional, unlimited by default) The memory size (MB)\n"
+        "  -m  --mem-limit      (Optional, unlimited by default) The memory size (MiB)\n"
         "                       limit of the program.\n"
         "      --disable-seccomp\n"
         "                       (Optional) This will disable secure computing mode,\n"
@@ -100,6 +100,10 @@ void display_help(const char *a0)
         "      --enable-vm-limit\n"
         "                       (Optional) Limit VM (Virtual Memory) only, if\n"
         "                       --mem-limit is on.\n"
+        "      --max-processes  (Optional, 128 by default) Max process number of the\n"
+        "                       unprivileged user (ojs). You must use --allow-multi-process\n"
+        "      --output-file-size\n"
+        "                       (Optional, 16MiB by default) Max output file size.\n"
         "\n"
         "  -h  --help           Show this help message and quit.\n"
         "  -v  --version        Show version information and quit.\n",
@@ -192,11 +196,26 @@ void option_handle(int argc, char **argv)
             }
             if (strcmp("max-processes", longOpts[longIndex].name) == 0)
             {
-                maxProcesses = strtol(optarg, NULL, 10);
+                errno = 0;
+                val = strtol(optarg, &endptr, 10);
+                if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0) || (endptr == optarg) || val <= 0)
+                {
+                    log("Max process number error.\n");
+                    exit(-1);
+                }
+                maxProcesses = val;
+
             }
             if (strcmp("output-file-size", longOpts[longIndex].name) == 0)
             {
-                maxOutputFile = strtol(optarg, NULL, 10);
+                errno = 0;
+                val = strtol(optarg, NULL, 10);
+                if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0) || (endptr == optarg) || val <= 0)
+                {
+                    log("Output file size error.\n");
+                    exit(-1);
+                }
+                maxOutputFile = val;
             }
             break;
         default:
@@ -247,10 +266,10 @@ void killChild(int sig)
 void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t maxFileSize, rlim_t maxStackSize)
 {
     /* The unit of some arguments:
-	 * maxMemory (MB)
+	 * maxMemory (MiB)
 	 * maxCPUTime (s)
-	 * maxFileSize (MB)
-	 * maxStackSize (MB)
+	 * maxFileSize (MiB)
+	 * maxStackSize (MiB)
 	 */
     if (maxMemory != 0)
     {
@@ -392,11 +411,11 @@ int main(int argc, char **argv)
 
         // set rlimit
 		// runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)
-        setLimit(runArgs.memLimit == 0 || !runArgs.isLimitVM ? 0 : (runArgs.memLimit * 1.5), // Virtual memory not limited
+        setLimit(runArgs.memLimit == 0 || !runArgs.isLimitVM ? 0 : (runArgs.memLimit * 1.5),
                  runArgs.timeLimit == 0 ? 0 : (int)(runArgs.timeLimit / 1000.0 + 1),
                  runArgs.isMultiProcess ? maxProcesses : 1,
                  maxOutputFile,
-                 0); // allow 1 process, 16 MB file size, rough time & memory limit
+                 0); // rough time & memory limit
         // redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
 
