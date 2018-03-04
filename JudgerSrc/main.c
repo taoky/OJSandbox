@@ -60,8 +60,8 @@ void display_version(const char *a0)
 void display_help(const char *a0)
 {
     log(TITLE "\n\n"
-        "Usage: %s -i file -o file [--disable-seccomp] [--allow-multi-process] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h|-v|-?] -- PROG [ARGS]\n"
-        "       %s --input file --output file [--disable-seccomp] [--allow-multi-process] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help|--version|-?] -- PROG [ARGS]\n"
+        "Usage: %s -i file -o file [--disable-seccomp] [--allow-multi-process] [--exec-stderr file] [-l file] [-t num] [-m num] [--enable-vm-limit] [-h|-v|-?] -- PROG [ARGS]\n"
+        "       %s --input file --output file [--disable-seccomp] [--allow-multi-process] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--enable-vm-limit] [--help|--version|-?] -- PROG [ARGS]\n"
         "  -i  --input          The file that will be the input source.\n"
         "  -o  --output         The file that will be the output (stdout) of the\n"
         "                       program.\n"
