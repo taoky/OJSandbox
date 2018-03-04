@@ -18,6 +18,7 @@ const char *const USERR = "(User) ojs's gid or uid error";
 const char *const CGERR = "cgroup error";
 const char *const SCERR = "seccomp error";
 const char *const CHERR = "chroot error";
+const char *const CAERR = "capability error";
 
 const char *const RES_OK = "OK";
 const char *const RES_RE = "RE";
@@ -25,8 +26,40 @@ const char *const RES_TLE = "TLE";
 const char *const RES_FSE = "FSE";
 const char *const RES_MLE = "MLE";
 
-bool isRootUser(void) {
-	return !(geteuid() || getegid());
+bool isPrivilege(void) {
+	// return !(geteuid() || getegid());
+	if (!getuid() && !getgid() && !geteuid() && !getegid())
+		return true; // is root user
+	else {
+		cap_t cap_p = cap_get_proc();
+		if (cap_p == NULL) {
+			errorExit(CAERR);
+		}
+		/* required capabilities by this program:
+		CAP_KILL
+		CAP_SYS_RESOURCE
+		CAP_SYS_CHROOT
+		CAP_SETUID
+		CAP_SETGID
+		*/
+		cap_value_t cap_list[] = {CAP_KILL, CAP_SYS_RESOURCE, CAP_SYS_CHROOT, CAP_SETUID, CAP_SETGID};
+		for (int i = 0; i < sizeof(cap_list) / sizeof(cap_value_t); i++) {
+			cap_flag_value_t value_p;
+			if (cap_get_flag(cap_p, cap_list[i], CAP_EFFECTIVE, &value_p) == -1) {
+				cap_free(cap_p);
+				errorExit(CAERR);
+			}
+			if (value_p == CAP_CLEAR) {
+				char *cap_name = cap_to_name(cap_list[i]);
+				log("Missing capability: %s\n", cap_name);
+				cap_free(cap_name); cap_free(cap_p);
+				return false;
+			}
+		}
+		cap_free(cap_p);
+		return true;
+	}
+	// return false;
 }
 
 void errorExit(const char *str) {
@@ -86,6 +119,20 @@ void setNonPrivilegeUser(void) {
 	if (status == -1) {
 		errorExit(UIERR);
 	}
+	// clear all capabilities
+	cap_t cap_p = cap_get_proc();
+	if (cap_p == NULL) {
+		errorExit(CAERR);
+	}
+	// showAllCapabilities();
+	if (cap_clear(cap_p) == -1) {
+		errorExit(CAERR);
+	}
+	if (cap_set_proc(cap_p) == -1) {
+		errorExit(CAERR);
+	}
+	// showAllCapabilities();
+	cap_free(cap_p);
 }
 
 char *pathCat(const char *path, const char *fileName) {
@@ -107,4 +154,15 @@ int timevalms(const struct timeval *timev) {
 
 void setrlimStruct(rlim_t num, struct rlimit * st) {
 	st->rlim_cur = st->rlim_max = num;
+}
+
+void showAllCapabilities() {
+	// for debug
+	cap_t cap_p = cap_get_proc();
+	if (cap_p == NULL) {
+		errorExit(CAERR);
+	}
+	char *caps = cap_to_text(cap_p, NULL);
+	log("Capabilities now: %s\n", caps);
+	cap_free(caps); cap_free(cap_p);
 }

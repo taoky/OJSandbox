@@ -2,7 +2,7 @@
 
 CC := gcc
 CFLAGS := -O3 -Wall -s
-LDFLAGS := -lseccomp
+LDFLAGS := -lseccomp -lcap
 
 CONFIG = config.h
 OBJS = main.o secrules.o util.o

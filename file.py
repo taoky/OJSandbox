@@ -2,10 +2,12 @@ import os
 import subprocess as sub
 import json
 import shutil as sh
+from debug import dprint
 
 workDir = os.getcwd() + '/'
 fnull = open(os.devnull, 'w')
 runDir = None
+chrootDir = None
 resourceDir = os.getcwd() + '/Backend/'
 initExe = resourceDir + 'init.sh'
 backendExe = resourceDir + 'safeJudger'
@@ -13,9 +15,9 @@ inFileName = 'in.tmp'
 outFileName = 'out.tmp'
 
 def createWorkspace():
-    global runDir
+    global runDir, chrootDir
     try:
-        cp = sub.run([initExe], stdout=sub.PIPE, universal_newlines=True)
+        cp = sub.run(["sudo", initExe], stdout=sub.PIPE, universal_newlines=True)
     except FileNotFoundError:
         raise
     except:
@@ -24,13 +26,14 @@ def createWorkspace():
     if cp.returncode != 0:
         # This may be a bit confusing but just use as a wordaround
         raise FileNotFoundError("Failed to create workspace")
-    runDir = cp.stdout.split(':')[-1].strip()
+    runDir = chrootDir = cp.stdout.split(':')[-1].strip()
+    runDir += "/tmp/"
     if not os.path.isdir(runDir):
         raise FileNotFoundError("Failed to create workspace")
-    sh.copy(backendExe, runDir)
+    # sh.copy(backendExe, runDir)
 
 def cleanupWorkspace():
-    global runDir
+    # global runDir
     try:
         cp = sub.run([initExe, 'cleanup'], stdout=sub.PIPE, stderr=sub.PIPE, universal_newlines=True)
     except FileNotFoundError:
@@ -50,6 +53,14 @@ def getRunDir():
     if runDir[-1] != '/':
         runDir += '/'
     return runDir
+
+def getchrootDir():
+    global chrootDir
+    if chrootDir is None:
+        createWorkspace()
+    if chrootDir[-1] != '/':
+        chrootDir += '/'
+    return chrootDir  
 
 def safeRemove(f):
     try:

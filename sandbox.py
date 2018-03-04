@@ -12,7 +12,7 @@ infoFile = file.workDir
 
 def executeProgramBackend(command, **options):
     if not 'dir' in options:
-        options['dir'] = file.getRunDir()
+        options['dir'] = file.getchrootDir()
     running = langSupport.formatBackendHelper(command, **options)
     pwd = os.getcwd()
 
@@ -39,7 +39,7 @@ def plainJudge(program, codeType, infile, outfile, **config):
     copy(infile, file.getRunDir() + inRedir)
     runHelper = langSupport.executeHelper[codeType]
     running = langSupport.formatHelper(runHelper, exefile=program)
-    runResult = executeProgramBackend(running, dir=file.getRunDir(), src=program,
+    runResult = executeProgramBackend(running, dir=file.getchrootDir(), src=program,
         stdin=file.getRunDir() + inRedir, stdout=file.getRunDir() + outRedir,
         timeout=config['timeout'], memory=config['ram'])
     rp = runResult.value
@@ -71,7 +71,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     except KeyError as e:
         return JudgeError(JudgeResult.FTE)
     
-    cps = executeProgramBackend(compiling, dir=file.getRunDir(), src=rsourceCodeName,
+    cps = executeProgramBackend(compiling, dir=file.getchrootDir(), src=rsourceCodeName,
         stdin='/dev/null', stdout='/dev/null',
         timeout=config.g['compile-time'], memory=config.g['compile-memory'],
         noseccomp=None, multiprocess=None, copyback=exefileName, vmlimit=None)

@@ -11,6 +11,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/sendfile.h>
+#include <sys/capability.h>
 #include <sys/mount.h>
 #include <fcntl.h>
 #include <pwd.h>
@@ -42,7 +43,7 @@ extern const char *const RES_MLE;
 extern uid_t ojsUID;
 extern gid_t ojsGID;
 
-bool isRootUser(void);
+bool isPrivilege(void);
 void errorExit(const char *str);
 int copyFile(const char *from, const char *to);
 void initUser(void);
@@ -51,5 +52,6 @@ char *pathCat(const char *path, const char *fileName);
 int timevalms(const struct timeval *timev);
 void setrlimStruct(rlim_t num, struct rlimit * st);
 bool writeFileStr(const char *path, const char *value, bool isOverWrite);
+void showAllCapabilities();
 
 #endif

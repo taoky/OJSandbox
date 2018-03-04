@@ -378,9 +378,9 @@ void logRedirect(char logpath[])
 int main(int argc, char **argv)
 {
     option_handle(argc, argv);
-    if (!isRootUser())
+    if (!isPrivilege())
     {
-        log("This program requires root user.\n");
+        log("This program requires root user or enough capabilities.\n");
         exit(-1);
     }
     logRedirect(runArgs.logFileName);

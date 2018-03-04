@@ -32,7 +32,7 @@ executeHelper = {
     '.java': ['/usr/bin/java', '%e'],
 }
 
-backendExe = ['sudo', file.backendExe]
+backendExe = [file.backendExe]
 # backendHelper has a ddifferrennt format from other helpers!
 backendHelper = {
     'dir': ['-c', '%'],
