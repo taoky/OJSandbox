@@ -1,11 +1,16 @@
 #include "main.h"
 #include "util.h"
 #include "secrules.h"
+#include "config.h"
+
+#define TITLE "OJ sandbox backend for Docker (version " GITVERSION_STR ", commit " GITCOMMIT_STR ", " __DATE__ " at " __TIME__ ")"
 
 pid_t son;
 static volatile int son_exec = 0;
 bool killedByTimer = false;
 bool memLimKilled = false;
+
+static int maxOutputFile = 16; // Unit: MiB
 
 struct runArgs_t
 {
@@ -17,11 +22,10 @@ struct runArgs_t
     unsigned long timeLimit; // --time-limit
     unsigned long memLimit;  // --mem-limit
     bool isSeccompDisabled;  // --disable-seccomp, optional
-    // bool isMultiProcess;     // --allow-multi-process
-    bool isMemLimitRSS;      // --mem-rss-only
+    bool isLimitVM;          // --enable-vm-limit
 } runArgs;
 
-static const char *const optString = "+i:o:t:m:l:h?";
+static const char * const optString = "+i:o:t:m:l:hv?";
 
 static const struct option longOpts[] = {
     {"input", required_argument, NULL, 'i'},
@@ -30,27 +34,57 @@ static const struct option longOpts[] = {
     {"time-limit", required_argument, NULL, 't'},
     {"mem-limit", required_argument, NULL, 'm'},
     {"disable-seccomp", no_argument, NULL, 0},
-    // {"allow-multi-process", no_argument, NULL, 0},
     {"exec-stderr", required_argument, NULL, 0},
-    {"mem-rss-only", no_argument, NULL, 0},
+    {"enable-vm-limit", no_argument, NULL, 0},
+    {"output-file-size", required_argument, NULL, 0},
     {"help", no_argument, NULL, 'h'},
+    {"version", no_argument, NULL, 'v'},
     {NULL, no_argument, NULL, 0}};
+
+void display_version(const char *a0)
+{
+    // Strip everything before the last slash to get the base name
+    const char * pname = a0 + strlen(a0);
+    for (int i = strlen(a0); i > 0; i--)
+    {
+        if (*--pname == '/')
+        {
+            ++pname;
+            break;
+        }
+    }
+    log("%s, " TITLE "\n", pname);
+    exit(0);
+}
 
 void display_help(const char *a0)
 {
-    log("This is the backend of the sandbox for oj. This version should be used in Docker (with pid-limit) only.\n");
-    log("Usage: %s -i file -o file [--disable-seccomp] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h] -- PROG [ARGS]\n", a0);
-    log("or: %s --input file --output file [--disable-seccomp] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help] -- PROG [ARGS]\n", a0);
-    log("--input or -i: The file that will be the input source.\n");
-    log("--output or -o: The file that will be the output (stdout) of the program.\n");
-    log("--log or -l: (Optional, stderr by default) The file that will be the output (stderr) of the sandbox (& program).\n");
-    log("--time-limit or -t: (Optional, unlimited by default) The time (ms) limit of the program.\n");
-    log("--mem-limit or -m: (Optional, unlimited by default) The memory size (MB) limit of the program.\n");
-    log("--disable-seccomp: (Optional) This will disable system call filter.\n");
-    // log("--allow-multi-process: (Optional) change process number limitation from 1 to 128.\n");
-    log("--exec-stderr: (Optional) This file will be the output (stderr) of the executed program.\n");
-    log("--mem-rss-only: (Optional) Limit RSS (Resident Set Size) memory only, if --mem-limit is on\n.");
-    log("--help or -h: (Optional) This will show this message.\n");
+    log(TITLE "\n\n"
+        "Usage: %s -i file -o file [--disable-seccomp] [--allow-multi-process] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h|-v|-?] -- PROG [ARGS]\n"
+        "       %s --input file --output file [--disable-seccomp] [--allow-multi-process] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help|--version|-?] -- PROG [ARGS]\n"
+        "  -i  --input          The file that will be the input source.\n"
+        "  -o  --output         The file that will be the output (stdout) of the\n"
+        "                       program.\n"
+        "  -l  --log            (Optional, stderr by default) The file that will be the\n"
+        "                       output (stderr) of the sandbox and program.\n"
+        "  -t  --time-limit     (Optional, unlimited by default) The time (ms) limit of\n"
+        "                       the program.\n"
+        "  -m  --mem-limit      (Optional, unlimited by default) The memory size (MiB)\n"
+        "                       limit of the program.\n"
+        "      --disable-seccomp\n"
+        "                       (Optional) This will disable secure computing mode,\n"
+        "                       the system call filter.\n"
+        "      --exec-stderr    (Optional) This file will be the output (stderr) of the\n"
+        "                       executed program.\n"
+        "      --enable-vm-limit\n"
+        "                       (Optional) Limit VM (Virtual Memory) only, if\n"
+        "                       --mem-limit is on.\n"
+        "      --output-file-size\n"
+        "                       (Optional, 16MiB by default) Max output file size.\n"
+        "\n"
+        "  -h  --help           Show this help message and quit.\n"
+        "  -v  --version        Show version information and quit.\n",
+		a0, a0);
     exit(0);
 }
 
@@ -59,7 +93,7 @@ void option_handle(int argc, char **argv)
     // init runArgs
     runArgs.timeLimit = runArgs.memLimit = 0;
     runArgs.inputFileName = runArgs.outputFileName = runArgs.logFileName = NULL;
-    runArgs.isSeccompDisabled = /*runArgs.isMultiProcess =*/ runArgs.isMemLimitRSS = false;
+    runArgs.isSeccompDisabled = runArgs.isLimitVM = false;
     runArgs.execCommand = (char **)NULL;
     runArgs.execStderr = NULL;
     int longIndex;
@@ -108,22 +142,34 @@ void option_handle(int argc, char **argv)
             {
                 runArgs.isSeccompDisabled = true;
             }
-            // if (strcmp("allow-multi-process", longOpts[longIndex].name) == 0)
-            // {
-            //     runArgs.isMultiProcess = true;
-            // }
             if (strcmp("exec-stderr", longOpts[longIndex].name) == 0)
             {
                 runArgs.execStderr = optarg;
             }
-            if (strcmp("mem-rss-only", longOpts[longIndex].name) == 0)
+            if (strcmp("enable-vm-limit", longOpts[longIndex].name) == 0)
             {
-                runArgs.isMemLimitRSS = true;
+                runArgs.isLimitVM = true;
+            }
+            if (strcmp("output-file-size", longOpts[longIndex].name) == 0)
+            {
+                errno = 0;
+                val = strtol(optarg, NULL, 10);
+                if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0) || (endptr == optarg) || val <= 0)
+                {
+                    log("Output file size error.\n");
+                    exit(-1);
+                }
+                maxOutputFile = val;
             }
             break;
         default:
             break;
         }
+    }
+    if (runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
+    {
+        log("Missing argument(s).\nUse %s -h or %s --help to get help.\n", argv[0], argv[0]);
+        exit(-1);
     }
     if (optind >= argc)
     {
@@ -131,17 +177,6 @@ void option_handle(int argc, char **argv)
         exit(-1);
     }
     runArgs.execCommand = argv + optind;
-    // check
-    if (runArgs.inputFileName == NULL || runArgs.outputFileName == NULL)
-    {
-        log("Missing argument(s).\nUse %s -h or %s --help to get help.\n", argv[0], argv[0]);
-        exit(-1);
-    }
-    if (runArgs.isMemLimitRSS && runArgs.memLimit == 0)
-    {
-        log("Missing --mem-limit when --mem-rss-only is on.\n");
-        exit(-1);
-    }
 }
 
 void ready(int sig)
@@ -167,14 +202,14 @@ void killChild(int sig)
         memLimKilled = true;
 }
 
-void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, /*rlim_t maxProcessNum,*/
+void setLimit(rlim_t maxMemory, rlim_t maxCPUTime,
                  rlim_t maxFileSize, rlim_t maxStackSize)
 {
     /* The unit of some arguments:
-	 * maxMemory (MB)
+	 * maxMemory (MiB)
 	 * maxCPUTime (s)
-	 * maxFileSize (MB)
-	 * maxStackSize (MB)
+	 * maxFileSize (MiB)
+	 * maxStackSize (MiB)
 	 */
     if (maxMemory != 0)
     {
@@ -185,7 +220,7 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, /*rlim_t maxProcessNum,*/
     {
         maxStackSize *= (1 << 20);
     }
-    struct rlimit max_memory, max_cpu_time, /*max_process_num,*/
+    struct rlimit max_memory, max_cpu_time,
                  max_file_size, max_stack, nocore;
     if (maxMemory != 0)
     {
@@ -195,10 +230,6 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, /*rlim_t maxProcessNum,*/
     {
         setrlimStruct(maxCPUTime, &max_cpu_time);
     }
-    // if (maxProcessNum != 0)
-    // {
-    //     setrlimStruct(maxProcessNum, &max_process_num);
-    // }
     setrlimStruct(maxFileSize, &max_file_size);
     if (maxStackSize != 0)
     {
@@ -220,13 +251,6 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, /*rlim_t maxProcessNum,*/
             errorExit(RLERR);
         }
     }
-    // if (maxProcessNum != 0)
-    // {
-    //     if (setrlimit(RLIMIT_NPROC, &max_process_num) != 0)
-    //     {
-    //         errorExit(RLERR);
-    //     }
-    // }
     if (setrlimit(RLIMIT_FSIZE, &max_file_size) != 0)
     {
         errorExit(RLERR);
@@ -283,12 +307,12 @@ void logRedirect(char logpath[])
 
 int main(int argc, char **argv)
 {
-    if (!isRootUser())
+    option_handle(argc, argv);
+    if (!isPrivilege())
     {
-        log("This program requires root user.\n");
+        log("This program requires root user or enough capabilities.\n");
         exit(-1);
     }
-    option_handle(argc, argv);
     logRedirect(runArgs.logFileName);
     default_signal(SIGUSR1, ready);
 
@@ -306,11 +330,11 @@ int main(int argc, char **argv)
         // child
 
         // set rlimit
-        setLimit(runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5),
+        setLimit(runArgs.memLimit == 0 || !runArgs.isLimitVM ? 0 : (runArgs.memLimit * 1.5),
                  runArgs.timeLimit == 0 ? 0 : (int)((runArgs.timeLimit + 1000) / 1000),
                 //  runArgs.isMultiProcess ? 128 : 1,
-                 16,
-                 runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
+                 maxOutputFile,
+                 runArgs.memLimit == 0 || !runArgs.isLimitVM ? 0 : (runArgs.memLimit * 1.5)); // allow 1 process, 16 MB file size, rough time & memory limit
         // redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
 
@@ -336,16 +360,16 @@ int main(int argc, char **argv)
     else
     {
         // parent
-        char procStat[12 + 10] = {};
-        sprintf(procStat, "/proc/%d/stat", son);
+        char procStat[13 + 10] = {};
+        snprintf(procStat, sizeof(procStat),  "/proc/%d/statm", son);
         // set timer
         default_signal(SIGALRM, killChild);
         struct itimerval itval;
         if (runArgs.timeLimit != 0)
         {
             itval.it_interval.tv_sec = itval.it_interval.tv_usec = 0; // only once
-            itval.it_value.tv_sec = runArgs.timeLimit / 1000;
-            itval.it_value.tv_usec = (runArgs.timeLimit % 1000 + 500) * 1000;
+            itval.it_value.tv_sec = (runArgs.timeLimit + TL_MARGIN) / 1000;
+            itval.it_value.tv_usec = ((runArgs.timeLimit + TL_MARGIN) % 1000) * 1000; // Allow up to 50 ms of systematic error
             if (setitimer(ITIMER_REAL, &itval, NULL) == -1)
             {
                 perror("setitimer error");
@@ -358,8 +382,7 @@ int main(int argc, char **argv)
         // wait & cleanup
         struct rusage sonUsage;
         int status;
-        unsigned long memory_max = 0, memory_now = 0;         // virt mem
-        unsigned long rss_memory_max = 0, rss_memory_now = 0; // rss mem
+        unsigned long memory_max = 0, memory_now = 0;         // rss mem
         int pagesize = getpagesize();
         while (wait3(&status, WUNTRACED | WNOHANG, &sonUsage) == 0)
         {
@@ -367,34 +390,22 @@ int main(int argc, char **argv)
             if (procFile)
             {
                 // prevent segfault
-                fscanf(procFile, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %lu %lu", &memory_now, &rss_memory_now);
+                if (fscanf(procFile, "%*u %lu", &memory_now) < 1)
+				{
+					memory_now = 0;
+				}
                 fclose(procFile);
             }
-            if (!runArgs.isMemLimitRSS)
-            {
-                if (memory_now > memory_max)
-                {
-                    memory_max = memory_now;
-                    if (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 20))
-                    {
-                        killChild(SIGUSR1); // mem > limit
-                    }
-                }
-            }
-            else
-            {
-                rss_memory_now *= pagesize / (1 << 10);
-                if (rss_memory_now > rss_memory_max)
-                {
-                    rss_memory_max = rss_memory_now;
-                    if (runArgs.memLimit != 0 && rss_memory_max > runArgs.memLimit * (1 << 10))
-                    {
-                        killChild(SIGUSR1);
-                    }
-                }
-            }
+			memory_now *= pagesize / (1 << 10);
+			if (memory_now > memory_max)
+			{
+				memory_max = memory_now;
+				if (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 10))
+				{
+					killChild(SIGUSR1);
+				}
+			}
         }
-        memory_max /= (1 << 10); // accurate virt usage
         int cpuTime = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
         // long maxrss = sonUsage.ru_maxrss;
         gettimeofday(&progEnd, NULL);
@@ -438,7 +449,7 @@ int main(int argc, char **argv)
             killChild(WSTOPSIG(status));
             puts(RES_RE);
         }
-        printf("%d %lu %d %lu\n", actualTime, memory_max, cpuTime, rss_memory_max);
+        printf("%d %lu %d %lu\n", actualTime, memory_max, cpuTime, memory_max);
     }
 
     return 0;

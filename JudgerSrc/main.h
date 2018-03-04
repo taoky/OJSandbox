@@ -12,6 +12,7 @@
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/capability.h>
 #include <signal.h>
 
 #endif

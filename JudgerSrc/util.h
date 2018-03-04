@@ -13,6 +13,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/sendfile.h>
+#include <sys/capability.h>
 #include <sys/mount.h>
 #include <fcntl.h>
 #include <pwd.h>
@@ -33,6 +34,7 @@ extern const char *const CPERR;
 extern const char *const USERR;
 extern const char *const CGERR;
 extern const char *const SCERR;
+extern const char *const CAERR;
 
 extern const char *const RES_OK;
 extern const char *const RES_RE;
@@ -45,9 +47,9 @@ extern gid_t ojsGID;
 
 typedef void (*sighandler_t)(int);
 
-bool isRootUser(void);
+bool isPrivilege(void);
 void errorExit(const char *str);
-void copyFile(const char *from, const char *to);
+// void copyFile(const char *from, const char *to);
 void initUser(void);
 void setNonPrivilegeUser(void);
 char *pathCat(const char *path, const char *fileName);
@@ -56,5 +58,6 @@ void setrlimStruct(rlim_t num, struct rlimit * st);
 bool writeFileStr(const char *path, const char *value, bool isOverWrite);
 // char *unstandard_basename(const char *str);
 void default_signal(int signum, sighandler_t handler);
+void showAllCapabilities();
 
 #endif
