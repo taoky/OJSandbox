@@ -18,7 +18,7 @@ $(BIN): $(CONFIG) $(OBJS)
 
 config.h:
 	echo "#define GITCOMMIT_STR \"`git rev-parse HEAD | head -c7`\"" > $@
-	echo "#define GITVERSION_STR \"`git rev-list --count --all`\"" >> $@
+	echo "#define GITVERSION_STR \"`git rev-list --count HEAD`\"" >> $@
 	echo "#define TL_MARGIN 50" >> $@
 
 clean:
