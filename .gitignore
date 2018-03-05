@@ -6,6 +6,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Generated I/O files
+in
+in.tmp
+out
+out.tmp
+
 # C extensions
 *.o
 *.so
