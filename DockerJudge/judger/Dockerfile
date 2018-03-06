@@ -8,7 +8,7 @@ ARG OJSUSER=ojs
 RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list \
 && sed -i 's|security.debian.org|mirrors.ustc.edu.cn/debian-security|g' /etc/apt/sources.list \
 && apt update \
-&& apt -y install gcc g++ python python3 python3-pip openjdk-8-jdk-headless curl libseccomp2 \
+&& apt -y install gcc g++ python python3 python3-pip openjdk-8-jdk-headless curl libseccomp2 libcap2 libcap2-bin\
 && rm -rf /var/lib/apt/lists/* \
 && useradd -s /usr/sbin/nologin -r -M -d /dev/null $OJSUSER \
 && echo -n "grant { };" > /etc/java.policy \
@@ -21,6 +21,7 @@ RUN mkdir -p /root/.config/pip && echo "[global]\nindex-url = https://mirrors.us
 && pip3 install -r requirements.txt
 
 ADD . /judgeApp
-RUN chmod 0555 safeJudger && chmod 0555 /judgeApp
+RUN chmod 0555 safeJudger && chmod 0555 /judgeApp \
+&& setcap cap_kill,cap_setuid,cap_setgid,cap_sys_resource+ep safeJudger
 
 ENTRYPOINT celery -A tasks worker --loglevel=info
