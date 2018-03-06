@@ -1,14 +1,12 @@
 .PHONY: all clean
 
 CC := gcc
-CFLAGS := -O3 -Wall -s
+CFLAGS := -std=c99 -O3 -Wall -s
 LDFLAGS := -lseccomp -lcap
 
 CONFIG = config.h
 OBJS = main.o secrules.o util.o
 BIN = safeJudger
-
-CFG_TL_MARGIN ?= 50
 
 all: $(BIN)
 
@@ -20,8 +18,7 @@ $(BIN): $(CONFIG) $(OBJS)
 
 config.h:
 	echo "#define GITCOMMIT_STR \"`git rev-parse HEAD | head -c7`\"" > $@
-	echo "#define GITVERSION_STR \"`git rev-list --count --all`\"" >> $@
-	echo "#define TL_MARGIN $(CFG_TL_MARGIN)" >> $@
+	echo "#define GITVERSION_STR \"`git rev-list --count HEAD`\"" >> $@
 
 clean:
 	rm -f $(BIN) $(OBJS) $(CONFIG)
