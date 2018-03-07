@@ -7,7 +7,7 @@ int main(){
 		return 0;
 	}
 	else if (child == 0){
-		char *args[2] = {"su", NULL};
+		char *args[] = {"su", "-c", "touch", "/haha.tmp", NULL};
 		execvp(*args, args+1);
 		return 0;
 	}

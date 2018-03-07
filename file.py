@@ -17,7 +17,7 @@ outFileName = 'out.tmp'
 def createWorkspace():
     global runDir, chrootDir
     try:
-        cp = sub.run(["sudo", initExe], stdout=sub.PIPE, universal_newlines=True)
+        cp = sub.run(['sudo', initExe], stdout=sub.PIPE, universal_newlines=True)
     except FileNotFoundError:
         raise
     except:
@@ -35,7 +35,7 @@ def createWorkspace():
 def cleanupWorkspace():
     # global runDir
     try:
-        cp = sub.run([initExe, 'cleanup'], stdout=sub.PIPE, stderr=sub.PIPE, universal_newlines=True)
+        cp = sub.run(['sudo', initExe, 'cleanup'], stdout=sub.PIPE, stderr=sub.PIPE, universal_newlines=True)
     except FileNotFoundError:
         raise
     except:
