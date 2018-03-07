@@ -12,6 +12,7 @@ langs = {
     '.cpp': COMPILED,
     '.py': INTERPRETED,
     '.java': MIXED,
+    '.pas': COMPILED,
 }
 
 canonicalName = {
@@ -19,6 +20,7 @@ canonicalName = {
     '.cpp': 'main.cpp',
     '.py': 'main.py',
     '.java': 'Main.java',
+    '.pas': 'main.pas',
 }
 
 exeName = {
@@ -26,6 +28,7 @@ exeName = {
     '.cpp': 'main',
     '.py': 'main.py',
     '.java': 'Main.class',
+    '.pas': 'main',
 }
 
 # '%i' is input file
@@ -37,6 +40,7 @@ compileHelper = {
     '.cpp': ['/usr/bin/g++', '-Wall', '-std=c++11', '-O3', '%i', '-o', '%o'],
     '.py': ['/bin/true', '%i', '%o'],
     '.java': ['/usr/bin/javac', '%i'],
+    '.pas': ['/usr/bin/fpc', '%i'],
 }
 
 executeHelper = {
@@ -44,6 +48,7 @@ executeHelper = {
     '.cpp': ['%e'],
     '.py': ['/usr/bin/python3', '%e'],
     '.java': ['/usr/bin/java', '-Djava.security.manager', '-Djava.security.policy==/etc/java_sandbox.policy', 'Main'],
+    '.pas': ['%e'],
 }
 
 backendExe = [file.backendExe]
