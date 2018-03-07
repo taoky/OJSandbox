@@ -10,8 +10,11 @@ BIN = safeJudger
 
 all: $(BIN)
 
-$(BIN): $(CONFIG) $(OBJS)
+$(BIN): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+main.o: main.c $(CONFIG)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $^

@@ -62,6 +62,13 @@ class JudgeResult:
     def stringBase(res):
         return JudgeResult.INFO.get(res, 'Unknown result')
 
+    @staticmethod
+    def stringBasePrettify(res):
+        if res in set((JudgeResult.AC, JudgeResult.OK)):
+            return '\x1B[1;32m' + JudgeResult.stringBase(res) + '\x1B[0m'
+        else:
+            return '\x1B[1;31m' + JudgeResult.stringBase(res) + '\x1B[0m'
+
     def isOK(s):
         OKcode = [JudgeResult.AC, JudgeResult.WA, JudgeResult.OK]
         try:
@@ -75,6 +82,9 @@ class JudgeResult:
 
     def __str__(self):
         return JudgeResult.stringBase(self.value)
+
+    def pretty(self):
+        return JudgeResult.stringBasePrettify(self.value)
 
 
 class JudgeError(Exception, JudgeResult):

@@ -9,9 +9,8 @@ before_install:
 install:
   - sudo apt-get install -qqy seccomp libseccomp-dev libcap-dev
 script:
-  - python3 main.py
   - make
-  - Backend/safeJudger --version
+  - python3 main.py
 before_cache:
   - true
 cache:

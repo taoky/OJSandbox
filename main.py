@@ -37,7 +37,7 @@ def OJRun():
                 continue
             config = file.loadProblemConfig(filename)
             res = sandbox.safeJudge(filename, fileExtension, relaPath, config)
-            print('{0} on {1}: {2} ({3})'.format(pInfo['name'], config['title'], res, res.res))
+            print('\x1B[1m{0}\x1B[0m on \x1B[1m{1}\x1B[0m: {2} ({3})'.format(pInfo['name'], config['title'], res.pretty(), res.res))
 
 def OJReset():
     file.cleanupWorkspace()
