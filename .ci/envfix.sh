@@ -8,5 +8,5 @@ while [ -h "$FILE" ]; do
   echo " Found $FILE"
 done
 
-echo "Replacing... /usr/bin/python3"
-ln -sfn $FILE /usr/bin/python3
+echo "Replacing /usr/bin/python3"
+ln -sfn "$FILE" /usr/bin/python3
