@@ -11,7 +11,7 @@ g = {
 def loadConfig():
     global g
     try:
-        with open('config.json') as f:
+        with open(os.path.dirname(__file__) + '/config.json') as f:
             fileconf = json.loads(f.read())
             for key in fileconf:
                 g[key] = fileconf[key]
