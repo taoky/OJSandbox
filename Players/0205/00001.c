@@ -1,7 +1,8 @@
 #include <unistd.h>
 
 int main(){
-	pid_t child = fork();
+	// pid_t child = fork();
+	unsigned long child = fork();
 	if (child < 0){
 		return 0;
 	}

@@ -11,6 +11,7 @@ in
 in.tmp
 out
 out.tmp
+a.out
 
 # C extensions
 *.o

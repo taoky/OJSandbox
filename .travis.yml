@@ -7,7 +7,7 @@ addons:
 before_install:
   - sudo apt-get update -qq
 install:
-  - sudo apt-get install -y seccomp libseccomp-dev libcap-dev libcap2
+  - sudo apt-get install -qqy seccomp libseccomp-dev libcap-dev
 script:
   - python3 main.py
   - make

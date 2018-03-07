@@ -3,6 +3,9 @@
 #include "secrules.h"
 #include "config.h"
 
+// Miscellaneous settings
+#define TL_MARGIN 50
+
 #define TITLE "OJ sandbox backend (version " GITVERSION_STR ", commit " GITCOMMIT_STR ", " __DATE__ " at " __TIME__ ")"
 
 pid_t son;

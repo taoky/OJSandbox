@@ -6,6 +6,7 @@ import config
 import file
 import langSupport
 from debug import dprint
+import json
 
 def OJRun():
     lPlayers = file.listOfPlayers()
@@ -16,6 +17,10 @@ def OJRun():
         if not os.path.isdir(relaPath):
             print("Ignored %s: Not a directory." % thisPlayer)
             continue
+        pInfo = file.getPlayerInfo(thisPlayer)
+        if pInfo is None:
+            print("No information registered for player {}, skipping".format(thisPlayer))
+            continue
         lSources = file.listOfPlayerSources(thisPlayer)
         for thisSource in lSources:
             sourceRelaPath = relaPath + thisSource
@@ -24,14 +29,15 @@ def OJRun():
                 print("Ignored %s: Not a file." % sourceRelaPath)
                 continue
             elif not langSupport.langType(fileExtension.lower()):
-                print("Ignored %s: Unsupported file extension." % sourceRelaPath)
+                if thisSource != 'info.json':
+                    print("Ignored %s: Unsupported file extension." % sourceRelaPath)
                 continue
             elif not filename in lProblems:
                 print("Ignored %s: Cannot find Problem %s." % (sourceRelaPath, filename))
                 continue
             config = file.loadProblemConfig(filename)
             res = sandbox.safeJudge(filename, fileExtension, relaPath, config)
-            print('{0} on {1}: {2} ({3})'.format(thisPlayer, config['title'], res, res.res))
+            print('{0} on {1}: {2} ({3})'.format(pInfo['name'], config['title'], res, res.res))
 
 def OJReset():
     file.cleanupWorkspace()

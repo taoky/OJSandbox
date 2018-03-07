@@ -87,6 +87,13 @@ def getProblemDirectory(problemName):
 def getPlayerDirectory(playerName):
     return "Players/" + playerName + "/"
 
+def getPlayerInfo(playerName):
+    try:
+        with open(getPlayerDirectory(playerName) + "info.json") as f:
+            return json.loads(f.read())
+    except FileNotFoundError:
+        return None
+
 def loadProblemConfig(problemName):
     with open(getProblemDirectory(problemName) + "config.json", "r") as f:
         config = json.loads(f.read())
@@ -94,7 +101,7 @@ def loadProblemConfig(problemName):
     return config
 
 def getProblemFiles(problemName):
-    ins = [i for i in os.listdir(getProblemDirectory(problemName)) if os.path.splitext(i)[1] == '.in']
+    ins = [i for i in os.listdir(getProblemDirectory(problemName)) if os.path.splitext(i)[-1] == '.in']
     ins.sort()
     outs = [os.path.splitext(i)[0] + ".out" for i in ins]
     res = [(ins[i], outs[i]) for i in range(len(ins))]
