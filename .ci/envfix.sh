@@ -1,6 +1,12 @@
 #!/bin/sh
 
-if [ ! -x /usr/bin/python3 ]; then
-  echo "/usr/bin/python3 not found, replacing..."
-  ln -sfn $(which python3) /usr/bin/python3
-fi
+FILE=/usr/bin/python3
+
+while [ -h "$FILE" ]; do
+  echo -n "Following symlink $FILE..."
+  FILE=$(readlink "$FILE")
+  echo " Found $FILE"
+done
+
+echo "Replacing... /usr/bin/python3"
+ln -sfn $FILE /usr/bin/python3
