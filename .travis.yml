@@ -8,6 +8,7 @@ before_install:
   - sudo apt-get update -qq
 install:
   - sudo apt-get install -qqy seccomp libseccomp-dev libcap-dev
+  - sudo ${PWD}/.ci/envfix.sh
 script:
   - make
   - python3 main.py
