@@ -39,7 +39,7 @@ backendHelper = {
     'src': ['-e', '%'],
     'stdin': ['-i', '%'],
     'stdout': ['-o', '%'],
-    'stderr': [], # This is not implemented yet
+    'stderr': [],  # This is not implemented yet
     'timeout': ['-t', '%'],
     'memory': ['-m', '%'],
     'noseccomp': ['--disable-seccomp'],
@@ -48,7 +48,7 @@ backendHelper = {
     'outsize': ['--output-file-size', '%'],
     'copyback': ['--copy-back', '%'],
     'vmlimit': ['--enable-vm-limit']
-    #'command': ['--exec-command', '--', '%'] # Special handling
+    # 'command': ['--exec-command', '--', '%'] # Special handling
 }
 
 def langType(lang):
@@ -65,7 +65,7 @@ def formatHelper(helper, **args):
             fdict[fkey] = args[akey]
         except KeyError:
             pass
-    
+
     return [fdict.get(key, key) for key in helper]
 
 def formatBackendHelper(command, **args):
@@ -92,4 +92,3 @@ def formatBackendHelper(command, **args):
     if command is not None:
         res += ['--exec-command', '--'] + command
     return res
-

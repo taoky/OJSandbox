@@ -5,11 +5,11 @@ class RunInfo:
 
     def __str__(self):
         return 'Time: {time}s, Mem: {mem} KiB'.format(
-            time=self.time/1000.0, mem=self.mem
+            time=self.time / 1000.0, mem=self.mem
         )
 
     def __add__(self, n):
-        return RunInfo(self.time+n.time, self.mem+n.mem)
+        return RunInfo(self.time + n.time, self.mem + n.mem)
 
     def __iadd__(self, n):
         self.time += n.time
@@ -17,7 +17,7 @@ class RunInfo:
         return self
 
     def __truediv__(self, n):
-        return RunInfo(self.time/n, self.mem//n)
+        return RunInfo(self.time / n, self.mem // n)
 
 class JudgeResult:
     # 0: No exceptions
@@ -30,7 +30,7 @@ class JudgeResult:
     TLE = 101
     MLE = 102
     FSE = 103
-    
+
     # 200: Compilation exceptions
     CE = 200
     FTE = 201
@@ -53,7 +53,7 @@ class JudgeResult:
         CE: 'Compile error',
         FTE: 'Invalid file type',
         IE: 'Internal error',
-        #AV: 'Access violation', don't tell this
+        # AV: 'Access violation', don't tell this
         AV: 'Runtime error',
         UNKNOWN: 'Unknown error'
     }
@@ -69,6 +69,7 @@ class JudgeResult:
         else:
             return '\x1B[1;31m' + JudgeResult.stringBase(res) + '\x1B[0m'
 
+    @staticmethod
     def isOK(s):
         OKcode = [JudgeResult.AC, JudgeResult.WA, JudgeResult.OK]
         try:
@@ -76,7 +77,7 @@ class JudgeResult:
         except AttributeError:
             return s in OKcode
 
-    def __init__(self, value, res = None):
+    def __init__(self, value, res=None):
         self.value = value
         self.res = res
 
@@ -88,9 +89,9 @@ class JudgeResult:
 
 
 class JudgeError(Exception, JudgeResult):
-    def __init__(self, value, res = None):
+    def __init__(self, value, res=None):
         self.value = value
         self.res = res
-    
+
     def __str__(self):
         return JudgeResult.stringBase(self.value)

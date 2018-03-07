@@ -6,10 +6,13 @@ import config
 import file
 import langSupport
 from debug import dprint
-import json
 
 def OJRun():
+    global config
+    config.loadConfig()
+    config.generateConfig()
     lPlayers = file.listOfPlayers()
+
     lProblems = file.listOfProblems()
 
     for thisPlayer in lPlayers:
@@ -32,7 +35,7 @@ def OJRun():
                 if thisSource != 'info.json':
                     print("Ignored %s: Unsupported file extension." % sourceRelaPath)
                 continue
-            elif not filename in lProblems:
+            elif filename not in lProblems:
                 print("Ignored %s: Cannot find Problem %s." % (sourceRelaPath, filename))
                 continue
             config = file.loadProblemConfig(filename)
@@ -43,12 +46,11 @@ def OJReset():
     file.cleanupWorkspace()
 
 if __name__ == '__main__':
-    config.loadConfig()
-    config.generateConfig()
-    if len(sys.argv) >= 2:
-        if sys.argv[1] == 'cleanup':
-            OJReset()
+    routine = OJRun
+    for opt in sys.argv[1:]:
+        if opt == 'cleanup':
+            routine = OJReset
             exit(0)
-        elif sys.argv[1] == 'debug':
+        elif opt == 'debug':
             dprint.enable()
-    OJRun()
+    routine()

@@ -43,4 +43,3 @@ def getCompareMethod(conf):
         return methods[conf]
     except KeyError:
         raise NotImplementedError
-

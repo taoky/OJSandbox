@@ -11,10 +11,10 @@ from debug import dprint
 infoFile = file.workDir
 
 def executeProgramBackend(command, **options):
-    if not 'dir' in options:
+    if 'dir' not in options:
         options['dir'] = file.getchrootDir()
     running = langSupport.formatBackendHelper(command, **options)
-    pwd = os.getcwd()
+    # pwd = os.getcwd()
 
     dprint(running)
 
@@ -54,23 +54,23 @@ def plainJudge(program, codeType, infile, outfile, **config):
 
     compareMethod = compare.getCompareMethod(config["compare"])
     cp = compareMethod(outfile, file.runDir + outRedir)
-    file.safeRemove(outRedir) # cleanup
-    if cp == False:
+    file.safeRemove(outRedir)  # cleanup
+    if not cp:
         return JudgeResult(JudgeResult.WA, runInfo)
     return JudgeResult(JudgeResult.AC, runInfo)
 
 def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     exefileName = 'out'
-    rsourceFileName = file.getRunDir() + exefileName
+    # # # # rsourceFileName = file.getRunDir() + exefileName
     rsourceCodeName = directory + sourceFileName + sourceFileExt
     results = []
-    
+
     try:
         compileHelper = langSupport.compileHelper[sourceFileExt.lower()][:]
-        compiling = langSupport.formatHelper(compileHelper, infile=sourceFileName+sourceFileExt, outfile=exefileName)
+        compiling = langSupport.formatHelper(compileHelper, infile=sourceFileName + sourceFileExt, outfile=exefileName)
     except KeyError as e:
         return JudgeError(JudgeResult.FTE)
-    
+
     cps = executeProgramBackend(compiling, dir=file.getchrootDir(), src=rsourceCodeName,
         stdin='/dev/null', stdout='/dev/null',
         timeout=config.g['compile-time'], memory=config.g['compile-memory'],
@@ -84,7 +84,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
         runCount += 1
         infile = file.getProblemDirectory(sourceFileName) + i[0]
         outfile = file.getProblemDirectory(sourceFileName) + i[1]
-        proFileName = os.path.splitext(infile)[0]
+        # proFileName = os.path.splitext(infile)[0]
         result = plainJudge(exefileName, sourceFileExt.lower(), infile, outfile, **problemConfig)
         results.append(result)
         if result.value != JudgeResult.AC:
@@ -93,7 +93,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
 
     if firstError is None:
         firstError = JudgeResult.AC
-    os.remove(exefileName) # remove the binary file
+    os.remove(exefileName)  # remove the binary file
     sumInfo = RunInfo()
     for i in results:
         sumInfo += i.res

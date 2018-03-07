@@ -11,8 +11,9 @@ install:
 script:
   - make
   - python3 main.py
+  - python3 main.py cleanup
 before_cache:
   - true
 cache:
   directories:
-    - $HOME/virtualenv/python3.*
+    - $HOME/virtualenv/python3.5.*

@@ -1,7 +1,6 @@
 import os
 import subprocess as sub
 import json
-import shutil as sh
 from debug import dprint
 
 workDir = os.getcwd() + '/'
@@ -60,7 +59,7 @@ def getchrootDir():
         createWorkspace()
     if chrootDir[-1] != '/':
         chrootDir += '/'
-    return chrootDir  
+    return chrootDir
 
 def safeRemove(f):
     try:
