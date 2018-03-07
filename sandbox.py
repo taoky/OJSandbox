@@ -81,6 +81,8 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
         noseccomp=True, multiprocess=True, copyback=exefileName, vmlimit=sourceFileExt != '.java')
     if not JudgeResult.isOK(cps.value):
         return JudgeError(JudgeResult.CE)
+    file.safeRemove(rsourceCodeName)
+    
     proFiles = file.getProblemFiles(sourceFileName)
     firstError = None
     runCount = 0

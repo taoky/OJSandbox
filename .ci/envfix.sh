@@ -9,4 +9,8 @@ while [ -h "$FILE" ]; do
 done
 
 echo "Replacing /usr/bin/python3"
-ln -sfn "$FILE" /usr/bin/python3
+#ln -sfn "$FILE" /usr/bin/python3
+BIN=/home/travis/virtualenv/python3.5.*
+BIN=$BIN/bin/python3
+
+ln -sfn "$BIN" /usr/bin/python3
