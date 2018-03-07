@@ -11,8 +11,8 @@ def OJRun():
     global config
     config.loadConfig()
     config.generateConfig()
-    lPlayers = file.listOfPlayers()
 
+    lPlayers = file.listOfPlayers()
     lProblems = file.listOfProblems()
 
     for thisPlayer in lPlayers:
@@ -46,11 +46,12 @@ def OJReset():
     file.cleanupWorkspace()
 
 if __name__ == '__main__':
+    os.chdir(file.tempDir)
     routine = OJRun
     for opt in sys.argv[1:]:
         if opt == 'cleanup':
             routine = OJReset
-            exit(0)
         elif opt == 'debug':
             dprint.enable()
     routine()
+    exit(0)

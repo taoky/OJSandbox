@@ -3,6 +3,7 @@ import subprocess as sub
 import json
 from debug import dprint
 
+dataDir = os.path.dirname(__file__) + '/'
 workDir = os.getcwd() + '/'
 fnull = open(os.devnull, 'w')
 runDir = None
@@ -12,6 +13,7 @@ initExe = resourceDir + 'init.sh'
 backendExe = resourceDir + 'safeJudger'
 inFileName = 'in.tmp'
 outFileName = 'out.tmp'
+tempDir = '/tmp/'
 
 def createWorkspace():
     global runDir, chrootDir
@@ -29,7 +31,7 @@ def createWorkspace():
     runDir += "/tmp/"
     if not os.path.isdir(runDir):
         raise FileNotFoundError("Failed to create workspace")
-    # sh.copy(backendExe, runDir)
+
 
 def cleanupWorkspace():
     # global runDir
@@ -72,19 +74,19 @@ def removeHiddenFiles(li):
     return [i for i in li if not i.startswith('.')]
 
 def listOfPlayers():
-    return sorted(removeHiddenFiles(os.listdir("Players")))
+    return sorted(removeHiddenFiles(os.listdir(dataDir + "Players")))
 
 def listOfProblems():
-    return sorted(removeHiddenFiles(os.listdir("Problems")))
+    return sorted(removeHiddenFiles(os.listdir(dataDir + "Problems")))
 
 def listOfPlayerSources(playerName):
     return sorted(removeHiddenFiles(os.listdir(getPlayerDirectory(playerName))))
 
 def getProblemDirectory(problemName):
-    return "Problems/" + problemName + "/"
+    return dataDir + "Problems/" + problemName + "/"
 
 def getPlayerDirectory(playerName):
-    return "Players/" + playerName + "/"
+    return dataDir + "Players/" + playerName + "/"
 
 def getPlayerInfo(playerName):
     try:

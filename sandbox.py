@@ -8,7 +8,7 @@ import langSupport
 from judge import RunInfo, JudgeResult, JudgeError
 from debug import dprint
 
-infoFile = file.workDir
+# infoFile = file.workDir
 
 def executeProgramBackend(command, **options):
     if 'dir' not in options:
@@ -33,7 +33,7 @@ def executeProgramBackend(command, **options):
         res[0] = 'IE'
     return JudgeResult(getattr(JudgeResult, res[0].strip()), runInfo)
 
-def plainJudge(program, codeType, infile, outfile, **config):
+def plainJudge(program, codeType, infile, outfile, runSettings={}, **config):
     inRedir = file.inFileName
     outRedir = file.outFileName
     copy(infile, file.getRunDir() + inRedir)
@@ -41,7 +41,8 @@ def plainJudge(program, codeType, infile, outfile, **config):
     running = langSupport.formatHelper(runHelper, exefile=program)
     runResult = executeProgramBackend(running, dir=file.getchrootDir(), src=program,
         stdin=file.getRunDir() + inRedir, stdout=file.getRunDir() + outRedir,
-        timeout=config['timeout'], memory=config['ram'])
+        timeout=config['timeout'], memory=config['ram'],
+        noseccomp='noseccomp' in runSettings, multiprocess='multiprocess' in runSettings)
     rp = runResult.value
     runInfo = runResult.res
 
@@ -53,39 +54,43 @@ def plainJudge(program, codeType, infile, outfile, **config):
     copy(file.getRunDir() + outRedir, os.getcwd())
 
     compareMethod = compare.getCompareMethod(config["compare"])
-    cp = compareMethod(outfile, file.runDir + outRedir)
+    compareResult = compareMethod(outfile, file.runDir + outRedir)
     file.safeRemove(outRedir)  # cleanup
-    if not cp:
+    if not compareResult:
         return JudgeResult(JudgeResult.WA, runInfo)
     return JudgeResult(JudgeResult.AC, runInfo)
 
 def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
-    exefileName = 'out'
-    # # # # rsourceFileName = file.getRunDir() + exefileName
+    exefileName = langSupport.exeName[sourceFileExt]
+    # rsourceFileName = file.getRunDir() + exefileName
     rsourceCodeName = directory + sourceFileName + sourceFileExt
     results = []
 
     try:
+        copyTarget = file.tempDir + langSupport.canonicalName[sourceFileExt]
+        copy(rsourceCodeName, copyTarget)
+        rsourceCodeName = copyTarget 
         compileHelper = langSupport.compileHelper[sourceFileExt.lower()][:]
-        compiling = langSupport.formatHelper(compileHelper, infile=sourceFileName + sourceFileExt, outfile=exefileName)
+        compiling = langSupport.formatHelper(compileHelper, infile=langSupport.canonicalName[sourceFileExt], outfile=exefileName)
     except KeyError as e:
         return JudgeError(JudgeResult.FTE)
 
     cps = executeProgramBackend(compiling, dir=file.getchrootDir(), src=rsourceCodeName,
         stdin='/dev/null', stdout='/dev/null',
         timeout=config.g['compile-time'], memory=config.g['compile-memory'],
-        noseccomp=None, multiprocess=None, copyback=exefileName, vmlimit=None)
+        noseccomp=True, multiprocess=True, copyback=exefileName, vmlimit=sourceFileExt != '.java')
     if not JudgeResult.isOK(cps.value):
         return JudgeError(JudgeResult.CE)
     proFiles = file.getProblemFiles(sourceFileName)
     firstError = None
     runCount = 0
+    runSettings = {'noseccomp': True, 'multiprocess': True} if sourceFileExt == '.java' else {}
     for i in proFiles:
         runCount += 1
         infile = file.getProblemDirectory(sourceFileName) + i[0]
         outfile = file.getProblemDirectory(sourceFileName) + i[1]
         # proFileName = os.path.splitext(infile)[0]
-        result = plainJudge(exefileName, sourceFileExt.lower(), infile, outfile, **problemConfig)
+        result = plainJudge(exefileName, sourceFileExt.lower(), infile, outfile, **problemConfig, runSettings=runSettings)
         results.append(result)
         if result.value != JudgeResult.AC:
             firstError = result.value
@@ -93,7 +98,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
 
     if firstError is None:
         firstError = JudgeResult.AC
-    os.remove(exefileName)  # remove the binary file
+    file.safeRemove(exefileName)  # remove the binary file
     sumInfo = RunInfo()
     for i in results:
         sumInfo += i.res

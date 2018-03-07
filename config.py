@@ -21,5 +21,5 @@ def loadConfig():
 
 
 def generateConfig():
-    with open('Backend/config.sh', "w") as f:
+    with open(os.path.dirname(__file__) + '/Backend/config.sh', "w") as f:
         f.write('RAMDISKSIZE={}\n'.format(g['output-size'] + 8))

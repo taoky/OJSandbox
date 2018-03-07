@@ -14,22 +14,36 @@ langs = {
     '.java': MIXED,
 }
 
+canonicalName = {
+    '.c': 'main.c',
+    '.cpp': 'main.cpp',
+    '.py': 'main.py',
+    '.java': 'Main.java',
+}
+
+exeName = {
+    '.c': 'main',
+    '.cpp': 'main',
+    '.py': 'main.py',
+    '.java': 'Main.class',
+}
+
 # '%i' is input file
 # '%o' is output file
-# '%e' is executable
+# '%e' is executable, overridden for Java
 
 compileHelper = {
     '.c': ['/usr/bin/gcc', '-Wall', '-std=c99', '-O3', '%i', '-o', '%o'],
     '.cpp': ['/usr/bin/g++', '-Wall', '-std=c++11', '-O3', '%i', '-o', '%o'],
-    '.py': ['/bin/cp', '%i', '%o'],
-    '.java': ['/usr/bin/javac', '%i', '-o', '%o'],
+    '.py': ['/bin/true', '%i', '%o'],
+    '.java': ['/usr/bin/javac', '%i'],
 }
 
 executeHelper = {
     '.c': ['%e'],
     '.cpp': ['%e'],
     '.py': ['/usr/bin/python3', '%e'],
-    '.java': ['/usr/bin/java', '%e'],
+    '.java': ['/usr/bin/java', '-Djava.security.manager', '-Djava.security.policy==/etc/java_sandbox.policy', 'Main'],
 }
 
 backendExe = [file.backendExe]
@@ -83,6 +97,8 @@ def formatBackendHelper(command, **args):
 
     args['rssmem'] = None
     for key in args:
+        if args[key] in [False, None]:
+            continue
         try:
             arg = [i if i != '%' else str(args[key]) for i in backendHelper[key]]
             res += arg
