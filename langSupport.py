@@ -19,8 +19,8 @@ langs = {
 # '%e' is executable
 
 compileHelper = {
-    '.c': ['/usr/bin/gcc', '-Wall', '-O3', '%i', '-o', '%o'],
-    '.cpp': ['/usr/bin/g++', '-Wall', '-O3', '%i', '-o', '%o'],
+    '.c': ['/usr/bin/gcc', '-Wall', '-std=c99', '-O3', '%i', '-o', '%o'],
+    '.cpp': ['/usr/bin/g++', '-Wall', '-std=c++11', '-O3', '%i', '-o', '%o'],
     '.py': ['/bin/cp', '%i', '%o'],
     '.java': ['/usr/bin/javac', '%i', '-o', '%o'],
 }
