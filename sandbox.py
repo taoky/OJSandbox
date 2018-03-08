@@ -32,7 +32,7 @@ def executeProgramBackend(command, **options):
         res[0] = 'IE'
     return JudgeResult(getattr(JudgeResult, res[0].strip()), runInfo)
 
-def plainJudge(program, codeType, infile, outfile, runSettings={}, **config):
+def judgeSingleTest(program, codeType, infile, outfile, runSettings={}, **config):
     inRedir = file.inFileName
     outRedir = file.outFileName
     copy(infile, file.getRunDir() + inRedir)
@@ -59,7 +59,7 @@ def plainJudge(program, codeType, infile, outfile, runSettings={}, **config):
         return JudgeResult(JudgeResult.WA, runInfo)
     return JudgeResult(JudgeResult.AC, runInfo)
 
-def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
+def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
     exefileName = langSupport.exeName[sourceFileExt]
     # rsourceFileName = file.getRunDir() + exefileName
     rsourceCodeName = directory + sourceFileName + sourceFileExt
@@ -94,7 +94,7 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
         infile = file.getProblemDirectory(sourceFileName) + i[0]
         outfile = file.getProblemDirectory(sourceFileName) + i[1]
         # proFileName = os.path.splitext(infile)[0]
-        result = plainJudge(exefileName, sourceFileExt.lower(), infile, outfile, **problemConfig, runSettings=runSettings)
+        result = judgeSingleTest(exefileName, sourceFileExt.lower(), infile, outfile, **problemConfig, runSettings=runSettings)
         results.append(result)
         if result.value != JudgeResult.AC:
             firstError = result.value
@@ -108,17 +108,3 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
         sumInfo += i.res
     avgInfo = sumInfo / runCount
     return JudgeResult(firstError, avgInfo)
-
-def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
-    try:
-        # Forward everything
-        return judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig)
-    except JudgeError as e:
-        # Cleanup
-        keys = ['exe', 'in', 'out']
-        for i in keys:
-            try:
-                os.remove(e.res[i])
-            except KeyError:
-                pass
-        return e, None
