@@ -5,7 +5,11 @@ g = {
     "max-processes": 128,
     "output-size": 16,
     "compile-time": 5000,
-    "compile-memory": 128
+    "compile-memory": 128,
+    "mem-bonus": {
+    },
+    "time-bonus": {
+    }
 }
 
 def loadConfig():

@@ -87,6 +87,9 @@ def judgeProcess(sourceFileName, sourceFileExt, directory, problemConfig):
     firstError = None
     runCount = 0
     runSettings = {'noseccomp': True, 'multiprocess': True} if sourceFileExt == '.java' else {}
+    problemConfig = dict(problemConfig)
+    problemConfig['ram'] = int(problemConfig['ram'] * config.g['mem-bonus'].get(sourceFileExt, 1.0))
+    problemConfig['timeout'] = int(problemConfig['timeout'] * config.g['time-bonus'].get(sourceFileExt, 1.0))
     for i in proFiles:
         runCount += 1
         infile = file.getProblemDirectory(sourceFileName) + i[0]
