@@ -80,7 +80,7 @@ int copyFile(const char *from, const char *to) {
 		perror(FSERR);
 		return -1;
 	}
-	fd_out = open(to, O_CREAT | O_WRONLY, st.st_mode);
+	fd_out = open(to, O_CREAT | O_WRONLY | O_TRUNC, st.st_mode);
 	if (fd_out == -1) {
 		perror(FIERR);
 		return -1;

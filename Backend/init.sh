@@ -27,8 +27,7 @@ cleanup() {
 }
 
 
-id -u $OJSUSER &>/dev/null
-if [ $? -eq 1 ]; then
+if ! id -u $OJSUSER &>/dev/null; then
   useradd -s /usr/sbin/nologin -r -M -d /dev/null $OJSUSER
 fi
 
@@ -57,6 +56,7 @@ cd "$tmpDir"
 
 mkdir -p proc dev tmp
 chmod $MODE0 proc dev tmp
+chmod 00777 tmp
 
 mount -t proc -o nosuid proc proc
 mknod dev/null c 1 3
@@ -77,5 +77,4 @@ setcap cap_kill,cap_setuid,cap_setgid,cap_sys_resource,cap_sys_chroot+ep "${0%/*
 
 echo -n "grant { };" > etc/java.policy
 OUT "The tmp dir: ${tmpDir}"
-
 

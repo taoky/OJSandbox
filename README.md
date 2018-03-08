@@ -31,7 +31,7 @@ make
 Now you can run the program and see the effect (may require `sudo` in the middle of execution - please grant it)
 
 ```
-python3 main.py
+sudo python3 main.py
 ```
 
 To cleanup the temporary files and directories created by this OJ sandbox, run the main entry with `cleanup`:

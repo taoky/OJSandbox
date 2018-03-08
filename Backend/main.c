@@ -395,7 +395,7 @@ int main(int argc, char **argv)
 
     char *execFileBaseName = basename(runArgs.execFileName);
     // 1. copy prog
-    char *chrootTmp = pathCat(runArgs.chrootDir, "/tmp");
+    char *chrootTmp = pathCat(runArgs.chrootDir, "tmp");
     char *copyprogTo = pathCat(chrootTmp, execFileBaseName);
     copyFile(runArgs.execFileName, copyprogTo);
     char *chrootProg = execFileBaseName;
@@ -513,6 +513,7 @@ int main(int argc, char **argv)
             char *copyFrom = pathCat(chrootTmp, runArgs.copyBackFileName);
             // copyto TODO
             copyFile(copyFrom, runArgs.copyBackFileName);
+            remove(copyFrom);
             free(copyFrom);
         }
         itval.it_value.tv_sec = itval.it_value.tv_usec = 0; // stop timer
