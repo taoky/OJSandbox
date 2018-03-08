@@ -14,15 +14,14 @@ def executeProgramBackend(command, **options):
     if 'dir' not in options:
         options['dir'] = file.getchrootDir()
     running = langSupport.formatBackendHelper(command, **options)
-    # pwd = os.getcwd()
 
-    dprint(running)
+    dprint(' '.join(running))
 
     cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     res = cp.stdout.split('\n')
 
-    dprint("stdout: {}".format(res))
-    dprint("stderr: {}".format(cp.stderr.split('\n')))
+    dprint("=== Captured stdout ===\n" + cp.stdout.rstrip())
+    dprint("=== Captured stderr ===\n" + cp.stderr.rstrip())
 
     try:
         stat = [int(i) for i in res[1].split(' ')]
