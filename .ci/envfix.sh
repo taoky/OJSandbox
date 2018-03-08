@@ -8,9 +8,7 @@ while [ -h "$FILE" ]; do
   echo " Found $FILE"
 done
 
-echo "Replacing /usr/bin/python3"
-#ln -sfn "$FILE" /usr/bin/python3
-BIN=/home/travis/virtualenv/python3.5.*
-BIN=$BIN/bin/python3
-
-ln -sfn "$BIN" /usr/bin/python3
+if [ "$FILE" != "/usr/bin/python3" ]; then
+  echo "Replacing /usr/bin/python3"
+  ln -sfn "$FILE" /usr/bin/python3
+fi

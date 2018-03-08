@@ -18,7 +18,7 @@ langs = {
 canonicalName = {
     '.c': 'main.c',
     '.cpp': 'main.cpp',
-    '.py': 'main.py',
+    '.py': 'stub.py',  # Special treatment
     '.java': 'Main.java',
     '.pas': 'main.pas',
 }
@@ -38,7 +38,7 @@ exeName = {
 compileHelper = {
     '.c': ['/usr/bin/gcc', '-Wall', '-std=c99', '-O3', '%i', '-o', '%o'],
     '.cpp': ['/usr/bin/g++', '-Wall', '-std=c++11', '-O3', '%i', '-o', '%o'],
-    '.py': ['/bin/true', '%i', '%o'],
+    '.py': ['/bin/cp', '%i', '%o'],  # Special treatment
     '.java': ['/usr/bin/javac', '%i'],
     '.pas': ['/usr/bin/fpc', '%i'],
 }

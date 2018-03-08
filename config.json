@@ -2,7 +2,7 @@
     "max-processes": 128,
     "output-size": 16,
     "compile-time": 5000,
-    "compile-memory": 128,
+    "compile-memory": 512,
     "mem-bonus": {
         ".java": 1.500000
     },
