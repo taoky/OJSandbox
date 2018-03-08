@@ -15,13 +15,13 @@ def executeProgramBackend(command, **options):
         options['dir'] = file.getchrootDir()
     running = langSupport.formatBackendHelper(command, **options)
 
-    dprint(' '.join(running))
+    dprint('\x1B[1;33mRunning:\x1B[0m ' + ' '.join(running))
 
     cp = subprocess.run(running, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     res = cp.stdout.split('\n')
 
-    dprint("=== Captured stdout ===\n" + cp.stdout.rstrip())
-    dprint("=== Captured stderr ===\n" + cp.stderr.rstrip())
+    dprint("\x1B[1;36m=== Captured stdout ===\x1B[0m\n" + cp.stdout.rstrip())
+    dprint("\x1B[1;35m=== Captured stderr ===\x1B[0m\n" + cp.stderr.rstrip())
 
     try:
         stat = [int(i) for i in res[1].split(' ')]

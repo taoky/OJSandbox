@@ -5,12 +5,12 @@ python:
   - 3.5
 addons:
 before_install:
-  - python3 setup.py enable-java enable-pascal
+  - python3 setup.py enable-java enable-pascal autoconfig
 install:
-  - sudo ./install.sh
+  - sudo $PWD/install.sh
 script:
   - make
-  - python3 main.py
+  - python3 main.py debug
   - python3 main.py cleanup
 before_cache:
   - true

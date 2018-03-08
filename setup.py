@@ -40,7 +40,7 @@ def createInstallScript(config, fn):
     aptInstall = ['libseccomp-dev', 'libcap-dev']
     script = ['#!/bin/sh', '', 'sudo apt update']
     if '.java' in config.enabledLang:
-        aptInstall.append('default-jdk-headless')
+        aptInstall.append('openjdk-8-jdk')
     if '.pas' in config.enabledLang:
         aptInstall.append('fp-compiler')
     script.append('sudo apt-get install -y ' + ' '.join(aptInstall))
@@ -79,10 +79,21 @@ if __name__ == '__main__':
     config = OJConfig()
 
     for opt in sys.argv[1:]:
-        if opt == 'autoconfig':
+        opt = opt.split('=')
+        opt, vals = opt[0], opt[1:]
+        if opt in ('autoconfig', 'writeconfig'):
             with open(configFileName, 'w') as f:
                 config.dump(f)
+            createInstallScript(config, installScriptFileName)
             exit(0)
+        elif opt in ('compile-mem', 'compile-memory'):
+            config.compilerRam = int(vals[0])
+        elif opt in ('compile-time'):
+            config.compilerTime = int(vals[0])
+        elif opt in ('max-process'):
+            config.maxProcess = int(vals[0])
+        elif opt in ('output-size'):
+            config.outputSize = int(vals[0])
         elif opt in ('enable-java'):
             if '.java' not in config.enabledLang:
                 config.enabledLang.append('.java')
