@@ -10,7 +10,7 @@ install:
   - sudo $PWD/install.sh
 script:
   - make
-  - python3 main.py
+  - python3 main.py debug
   - python3 main.py cleanup
 before_cache:
   - true
