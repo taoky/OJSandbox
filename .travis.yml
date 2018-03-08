@@ -5,10 +5,9 @@ python:
   - 3.5
 addons:
 before_install:
-  - sudo apt-get update -qq
+  - python3 setup.py enable-java enable-pascal autoconfig
 install:
-  - sudo apt-get install -qqy seccomp libseccomp-dev libcap-dev fp-compiler
-  - sudo ${PWD}/.ci/envfix.sh
+  - sudo $PWD/install.sh
 script:
   - make
   - python3 main.py
