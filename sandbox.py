@@ -35,11 +35,12 @@ def executeProgramBackend(command, **options):
 def judgeSingleTest(program, codeType, infile, outfile, runSettings={}, **config):
     inRedir = file.inFileName
     outRedir = file.outFileName
+    errRedir = file.errFileName
     copy(infile, file.getRunDir() + inRedir)
     runHelper = langSupport.executeHelper[codeType]
     running = langSupport.formatHelper(runHelper, exefile=program)
     runResult = executeProgramBackend(running, dir=file.getchrootDir(), src=program,
-        stdin=file.getRunDir() + inRedir, stdout=file.getRunDir() + outRedir,
+        stdin=file.getRunDir() + inRedir, stdout=file.getRunDir() + outRedir, stderr=file.getRunDir() + errRedir,
         timeout=config['timeout'], memory=config['ram'],
         noseccomp='noseccomp' in runSettings, multiprocess='multiprocess' in runSettings)
     rp = runResult.value
@@ -75,7 +76,7 @@ def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
         return JudgeError(JudgeResult.FTE)
 
     cps = executeProgramBackend(compiling, dir=file.getchrootDir(), src=rsourceCodeName,
-        stdin='/dev/null', stdout='/dev/null',
+        stdin='/dev/null', stdout='/dev/null', stderr='/dev/null',
         timeout=config.g['compile-time'], memory=config.g['compile-memory'],
         noseccomp=True, multiprocess=True, copyback=exefileName, vmlimit=sourceFileExt != '.java')
     if not JudgeResult.isOK(cps.value):

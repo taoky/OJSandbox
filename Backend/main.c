@@ -23,6 +23,7 @@ struct runArgs_t
     char **execCommand;      // after '--'
     char *inputFileName;     // --input
     char *outputFileName;    // --output
+    char *errorputFileName;  // --error
     char *logFileName;       // --log, optional
     char *copyBackFileName;  // --copy-back, optional (compile)
     char *execStderr;        // --exec-stderr, optional
@@ -34,7 +35,7 @@ struct runArgs_t
     bool isLimitVM;          // --enable-vm-limit
 } runArgs;
 
-static const char * const optString = "+c:e:i:o:t:m:l:hv?";
+static const char * const optString = "+c:e:i:o:E:t:m:l:hv?";
 
 static const struct option longOpts[] = {
     {"chroot-dir", required_argument, NULL, 'c'},
@@ -42,6 +43,7 @@ static const struct option longOpts[] = {
     {"exec-command", no_argument, NULL, 0},
     {"input", required_argument, NULL, 'i'},
     {"output", required_argument, NULL, 'o'},
+    {"error", required_argument, NULL, 'E'},
     {"log", required_argument, NULL, 'l'},
     {"time-limit", required_argument, NULL, 't'},
     {"mem-limit", required_argument, NULL, 'm'},
@@ -75,7 +77,7 @@ void display_version(const char *a0)
 void display_help(const char *a0)
 {
     log(TITLE "\n\n"
-        "Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h|-v] [--exec-command] [-- PROG [ARGS]]\n"
+        "Usage: %s -c path -e file -i file -o file -e file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h|-v] [--exec-command] [-- PROG [ARGS]]\n"
         "       %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help|--version] [--exec-command] [-- PROG [ARGS]]\n"
         "  -c  --chroot-dir     The directory that will be chroot(2)ed in.\n"
         "  -e  --exec-file      The program (or source file) that will be executed or\n"
@@ -84,6 +86,7 @@ void display_help(const char *a0)
         "  -i  --input          The file that will be the input source.\n"
         "  -o  --output         The file that will be the output (stdout) of the\n"
         "                       program.\n"
+        "  -E  --error          The file that will be the standard error of the program\n"
         "  -l  --log            (Optional, stderr by default) The file that will be the\n"
         "                       output (stderr) of the sandbox and program.\n"
         "  -t  --time-limit     (Optional, unlimited by default) The time (ms) limit of\n"
@@ -342,12 +345,13 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     }
 }
 
-void fileRedirect(char inputpath[], char outputpath[])
+void fileRedirect(const char *inputpath, const char *outputpath, const char *errorpath)
 {
     /* redirect stdin & stdout */
     FILE *input_file = fopen(inputpath, "r");
     FILE *output_file = fopen(outputpath, "w");
-    if (input_file == NULL || output_file == NULL)
+    FILE *error_file = fopen(errorpath, "w");
+    if (input_file == NULL || output_file == NULL || error_file == NULL)
     {
         errorExit(FIERR);
     }
@@ -356,6 +360,10 @@ void fileRedirect(char inputpath[], char outputpath[])
         errorExit(RDERR);
     }
     if (dup2(fileno(output_file), fileno(stdout)) == -1)
+    {
+        errorExit(RDERR);
+    }
+    if (dup2(fileno(output_file), fileno(stderr)) == -1)
     {
         errorExit(RDERR);
     }

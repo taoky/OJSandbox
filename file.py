@@ -13,6 +13,7 @@ initExe = resourceDir + 'init.sh'
 backendExe = resourceDir + 'safeJudger'
 inFileName = 'in.tmp'
 outFileName = 'out.tmp'
+errFileName = 'err.tmp'
 tempDir = '/tmp/'
 
 def createWorkspace():
