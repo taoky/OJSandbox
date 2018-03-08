@@ -1,0 +1,6 @@
+{
+	"title": "ReverseString",
+	"timeout": 1000,
+	"ram": 128,
+	"compare": "line"
+}
