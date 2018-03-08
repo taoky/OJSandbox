@@ -48,10 +48,10 @@ def createInstallScript(config, fn):
         f.write('\n'.join(script))
     os.chmod(fn, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
-def safeInput(dType=int, regulator=lambda x: True, default=None):
+def safeInput(dType=int, validate=lambda x: True, default=None):
     try:
         d = dType(input())
-        if not regulator(d):
+        if not validate(d):
             raise ValueError
         return d
     except ValueError:
@@ -66,11 +66,11 @@ def promptConfig(config):
     config.compilerTime = safeInput(int, lambda x: x > 1, 5000)
     print('Compiler memory in MiB: [256] ', end='')
     config.compilerRam = safeInput(int, lambda x: x > 1, 256)
-    print('Enable Java (require extra packages from APT): [False] ', end='')
+    print('Enable Java (require extra packages from APT): [Leave blank to set to False] ', end='')
     config.enableJava = safeInput(bool, default=False)
     if config.enableJava:
         config.enabledLang.append('.java')
-    print('Enable Pascal (require extra packages from APT): [False] ', end='')
+    print('Enable Pascal (require extra packages from APT): [Leave blank to set to False] ', end='')
     config.enablePascal = safeInput(bool, default=False)
     if config.enablePascal:
         config.enabledLang.append('.pas')
