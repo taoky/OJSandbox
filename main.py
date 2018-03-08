@@ -35,12 +35,15 @@ def OJRun():
                 if thisSource != 'info.json':
                     print("Ignored %s: Unsupported file extension." % sourceRelaPath)
                 continue
+            elif fileExtension.lower() not in config.g['enabled']:
+                print("Ignored %s: File type is supported, but not enabled" % sourceRelaPath)
+                continue
             elif filename not in lProblems:
                 print("Ignored %s: Cannot find Problem %s." % (sourceRelaPath, filename))
                 continue
-            config = file.loadProblemConfig(filename)
-            res = sandbox.safeJudge(filename, fileExtension, relaPath, config)
-            print('\x1B[1m{0}\x1B[0m on \x1B[1m{1}\x1B[0m: {2} ({3})'.format(pInfo['name'], config['title'], res.pretty(), res.res))
+            problemConfig = file.loadProblemConfig(filename)
+            res = sandbox.safeJudge(filename, fileExtension, relaPath, problemConfig)
+            print('\x1B[1m{0}\x1B[0m on \x1B[1m{1}\x1B[0m: {2} ({3})'.format(pInfo['name'], problemConfig['title'], res.pretty(), res.res))
 
 def OJReset():
     file.cleanupWorkspace()

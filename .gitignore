@@ -13,6 +13,10 @@ out
 out.tmp
 a.out
 
+# Generated config files
+install.sh
+config.json
+
 # C extensions
 *.o
 *.so

@@ -9,7 +9,8 @@ g = {
     "mem-bonus": {
     },
     "time-bonus": {
-    }
+    },
+    "enabled": ['.c', '.cpp', '.py'],
 }
 
 def loadConfig():

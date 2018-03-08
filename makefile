@@ -1,4 +1,4 @@
-.PHONY: all clean run
+.PHONY: all clean run config
 
 CACHES = __pycache__
 
@@ -12,7 +12,11 @@ Backend:
 	$(MAKE) -C Backend
 
 run:
-	$(PYTHON3) main.py
+	$(PYTHON3) main.py $(DEBUG)
+	$(PYTHON3) main.py cleanup
+
+config:
+	$(PYTHON3) setup.py
 
 clean:
 	$(MAKE) clean -C Backend
