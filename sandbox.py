@@ -56,6 +56,7 @@ def judgeSingleTest(program, codeType, infile, outfile, runSettings={}, **config
     compareMethod = compare.getCompareMethod(config["compare"])
     compareResult = compareMethod(outfile, file.runDir + outRedir)
     file.safeRemove(outRedir)  # cleanup
+    file.cleanupRunDir()
     if not compareResult:
         return JudgeResult(JudgeResult.WA, runInfo)
     return JudgeResult(JudgeResult.AC, runInfo)
@@ -82,6 +83,7 @@ def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
     if not JudgeResult.isOK(cps.value):
         return JudgeError(JudgeResult.CE)
     file.safeRemove(rsourceCodeName)
+    file.cleanupRunDir()
     
     proFiles = file.getProblemFiles(sourceFileName)
     firstError = None

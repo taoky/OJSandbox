@@ -64,12 +64,17 @@ def getchrootDir():
         chrootDir += '/'
     return chrootDir
 
+
 def safeRemove(f):
     try:
         os.remove(f)
         return True
     except FileNotFoundError:
         return False
+
+def cleanupRunDir():
+    for f in os.listdir(getRunDir()):
+        safeRemove(f)
 
 def removeHiddenFiles(li):
     return [i for i in li if not i.startswith('.')]
