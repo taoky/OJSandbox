@@ -58,7 +58,7 @@ backendHelper = {
     'src': ['-e', '%'],
     'stdin': ['-i', '%'],
     'stdout': ['-o', '%'],
-    'stderr': ['--exec-stderr', '%'],
+    'stderr': ['-E', '%'],
     'timeout': ['-t', '%'],
     'memory': ['-m', '%'],
     'noseccomp': ['--disable-seccomp'],

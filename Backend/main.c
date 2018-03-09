@@ -23,7 +23,6 @@ struct runArgs_t
     char **execCommand;      // after '--'
     char *inputFileName;     // --input
     char *outputFileName;    // --output
-    char *errorputFileName;  // --error
     char *logFileName;       // --log, optional
     char *copyBackFileName;  // --copy-back, optional (compile)
     char *execStderr;        // --exec-stderr, optional
@@ -50,7 +49,7 @@ static const struct option longOpts[] = {
     {"disable-seccomp", no_argument, NULL, 0},
     {"copy-back", required_argument, NULL, 0},
     {"allow-multi-process", no_argument, NULL, 0},
-    {"exec-stderr", required_argument, NULL, 0},
+    {"exec-stderr", required_argument, NULL, 'E'},
     {"enable-vm-limit", no_argument, NULL, 0},
     {"max-processes", required_argument, NULL, 0},
     {"output-file-size", required_argument, NULL, 0},
@@ -77,7 +76,7 @@ void display_version(const char *a0)
 void display_help(const char *a0)
 {
     log(TITLE "\n\n"
-        "Usage: %s -c path -e file -i file -o file -e file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h|-v] [--exec-command] [-- PROG [ARGS]]\n"
+        "Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [-E file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h|-v] [--exec-command] [-- PROG [ARGS]]\n"
         "       %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help|--version] [--exec-command] [-- PROG [ARGS]]\n"
         "  -c  --chroot-dir     The directory that will be chroot(2)ed in.\n"
         "  -e  --exec-file      The program (or source file) that will be executed or\n"
@@ -86,7 +85,6 @@ void display_help(const char *a0)
         "  -i  --input          The file that will be the input source.\n"
         "  -o  --output         The file that will be the output (stdout) of the\n"
         "                       program.\n"
-        "  -E  --error          The file that will be the standard error of the program\n"
         "  -l  --log            (Optional, stderr by default) The file that will be the\n"
         "                       output (stderr) of the sandbox and program.\n"
         "  -t  --time-limit     (Optional, unlimited by default) The time (ms) limit of\n"
@@ -101,7 +99,7 @@ void display_help(const char *a0)
         "                       working directory.\n"
         "      --allow-multi-process\n"
         "                       (Optional) Allow up to 128 processes to run.\n"
-        "      --exec-stderr    (Optional) This file will be the output (stderr) of the\n"
+        "  -E  --exec-stderr    (Optional) This file will be the output (stderr) of the\n"
         "                       executed program.\n"
         "      --enable-vm-limit\n"
         "                       (Optional) Limit VM (Virtual Memory) only, if\n"
@@ -138,6 +136,9 @@ void option_handle(int argc, char **argv)
             break;
         case 'e':
             runArgs.execFileName = optarg;
+            break;
+        case 'E':
+            runArgs.execStderr = optarg;
             break;
         case 'i':
             runArgs.inputFileName = optarg;
@@ -191,10 +192,6 @@ void option_handle(int argc, char **argv)
             if (strcmp("allow-multi-process", longOpts[longIndex].name) == 0)
             {
                 runArgs.isMultiProcess = true;
-            }
-            if (strcmp("exec-stderr", longOpts[longIndex].name) == 0)
-            {
-                runArgs.execStderr = optarg;
             }
             if (strcmp("enable-vm-limit", longOpts[longIndex].name) == 0)
             {
@@ -345,13 +342,12 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     }
 }
 
-void fileRedirect(const char *inputpath, const char *outputpath, const char *errorpath)
+void fileRedirect(const char *inputpath, const char *outputpath)
 {
     /* redirect stdin & stdout */
     FILE *input_file = fopen(inputpath, "r");
     FILE *output_file = fopen(outputpath, "w");
-    FILE *error_file = fopen(errorpath, "w");
-    if (input_file == NULL || output_file == NULL || error_file == NULL)
+    if (input_file == NULL || output_file == NULL)
     {
         errorExit(FIERR);
     }
@@ -363,13 +359,9 @@ void fileRedirect(const char *inputpath, const char *outputpath, const char *err
     {
         errorExit(RDERR);
     }
-    if (dup2(fileno(output_file), fileno(stderr)) == -1)
-    {
-        errorExit(RDERR);
-    }
 }
 
-void logRedirect(char logpath[])
+void logRedirect(const char *logpath)
 {
     /* redirect stderr */
     if (logpath != NULL)
