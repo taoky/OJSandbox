@@ -23,6 +23,7 @@ cleanup() {
 		umount "$i"
 		rm -rf "$i"
 	done
+    rm -f "./config.sh"
 	return 0
 }
 
@@ -40,6 +41,8 @@ if [ "$1" = "cleanup" ]; then
 	cleanup
 	exit $?
 fi
+
+# Load config before starting the main procedure
 
 if [ -r "./config.sh" ]; then
 	. ./config.sh
