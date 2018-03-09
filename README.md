@@ -37,5 +37,11 @@ sudo python3 main.py
 To cleanup the temporary files and directories created by this OJ sandbox, run the main entry with `cleanup`:
 
 ```
-python3 main.py cleanup
+sudo python3 main.py cleanup
+```
+
+**Note**: As `sudo` is used when running the program, you may need it when cleaning up the qorking directory, i.e.
+
+```
+sudo make clean
 ```
