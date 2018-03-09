@@ -3,7 +3,7 @@
 int main(){
 	FILE *f = fopen("/etc/passwd", "r");
 	if (f == NULL){
-		return 0; // Sneaky-sneaky
+		return -1; // Sneaky-sneaky
 	}
 	int ch;
 	goto start;

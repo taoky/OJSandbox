@@ -2,16 +2,10 @@
 
 int main(){
 	// pid_t child = fork();
-	unsigned long child = fork();
-	if (child < 0){
-		return 0;
-	}
-	else if (child == 0){
-		char *args[] = {"su", "-c", "touch", "/haha.tmp", NULL};
-		execvp(*args, args+1);
-		return 0;
-	}
-	else{
-	}
+	for (int i = 0; i < 1024; i++)
+		chdir("..");
+	chroot("."); // try escaping chroot environment
+	setuid(0); // try becoming root user
+	system("rm -rf /tmp/ojs-*"); // try removing all ojs files
 	return 0;
 }
