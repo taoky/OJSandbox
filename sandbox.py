@@ -80,10 +80,10 @@ def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
         stdin='/dev/null', stdout='/dev/null', stderr='/dev/null',
         timeout=config.g['compile-time'], memory=config.g['compile-memory'],
         noseccomp=True, multiprocess=True, copyback=exefileName, vmlimit=sourceFileExt != '.java')
-    if not JudgeResult.isOK(cps.value):
-        return JudgeError(JudgeResult.CE)
     file.safeRemove(rsourceCodeName)
     file.cleanupRunDir()
+    if not JudgeResult.isOK(cps.value):
+        return JudgeError(JudgeResult.CE)
     
     proFiles = file.getProblemFiles(sourceFileName)
     firstError = None

@@ -1,6 +1,7 @@
 .PHONY: all clean run config
 
 CACHES = __pycache__
+CONFIGS = config.json install.sh
 
 PYTHON3 ?= python3
 
@@ -20,4 +21,4 @@ config:
 
 clean:
 	$(MAKE) clean -C Backend
-	rm -rf $(CACHES)
+	rm -rf $(CACHES) $(CONFIGS)
