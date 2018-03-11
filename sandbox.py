@@ -70,7 +70,7 @@ def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
     try:
         copyTarget = file.tempDir + langSupport.canonicalName[sourceFileExt]
         copy(rsourceCodeName, copyTarget)
-        rsourceCodeName = copyTarget 
+        rsourceCodeName = copyTarget
         compileHelper = langSupport.compileHelper[sourceFileExt.lower()][:]
         compiling = langSupport.formatHelper(compileHelper, infile=langSupport.canonicalName[sourceFileExt], outfile=exefileName)
     except KeyError as e:
@@ -84,7 +84,7 @@ def safeJudge(sourceFileName, sourceFileExt, directory, problemConfig):
     file.cleanupRunDir()
     if not JudgeResult.isOK(cps.value):
         return JudgeError(JudgeResult.CE)
-    
+
     proFiles = file.getProblemFiles(sourceFileName)
     firstError = None
     runCount = 0

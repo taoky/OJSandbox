@@ -47,7 +47,7 @@ executeHelper = {
     '.c': ['%e'],
     '.cpp': ['%e'],
     '.py': ['/usr/bin/python3', '%e'],
-    '.java': ['/usr/bin/java', '-Djava.security.manager','-Djava.security.policy==/etc/java.policy', 'Main'],
+    '.java': ['/usr/bin/java', '-Djava.security.manager', '-Djava.security.policy==/etc/java.policy', 'Main'],
     '.pas': ['%e'],
 }
 
