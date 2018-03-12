@@ -77,7 +77,7 @@ do
 	mount -o ro,nosuid,bind "/$i" "$i"
 done
 
-setcap cap_kill,cap_setuid,cap_setgid,cap_sys_resource,cap_sys_chroot+ep "${0%/*}/safeJudger"
+setcap cap_fowner,cap_kill,cap_setuid,cap_setgid,cap_sys_resource,cap_sys_chroot+ep "${0%/*}/safeJudger"
 
 echo -n "grant { };" > etc/java.policy
 OUT "The tmp dir: ${tmpDir}"
