@@ -1,0 +1,7 @@
+This folder stores small code of experiments (benchmark, etc.)
+
+TODO:
+
+1. Finish the benchmark between ptrace and seccomp.
+
+2. Consider what problem can we study deeper (read lectures, etc.)
