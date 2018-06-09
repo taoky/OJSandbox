@@ -70,7 +70,7 @@ mount -o bind /dev/null dev/null
 mount -o bind /dev/urandom dev/urandom
 mount -o "size=${RAMDISKSIZE}m,nr_inodes=4k,nosuid" -t tmpfs tmpfs tmp
 
-for i in bin etc/alternatives lib lib64 usr/bin usr/include usr/lib usr/share etc/java-9-openjdk #usr/lib64 usr/libexec
+for i in bin etc/alternatives lib lib64 usr/bin usr/include usr/lib usr/share etc/java-8-openjdk #usr/lib64 usr/libexec
 do
 	mkdir -p "$i"
 	chmod $MODE0 "$i"
