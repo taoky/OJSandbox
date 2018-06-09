@@ -19,6 +19,7 @@
 #include <linux/seccomp.h>
 #include <linux/filter.h>
 #include <linux/audit.h>
+#include <stdint.h>
 
 int a, b, res;
 
@@ -26,9 +27,12 @@ int main() {
     scanf("%d%d", &a, &b);
     res = a + b;
 
-    int fd = syscall(SYS-open | (1 << 30), (unsigned long)"/bin/sh", O_RDONLY);
+    int fd = syscall(SYS_open | (1 << 30), (unsigned long)"/etc/passwd", O_RDONLY);
     if (fd > 0) {
-        fprintf(stderr, "File successfully opened at %d\n", %d);
+        fprintf(stderr, "File successfully opened at %d\n", fd);
+    } else {
+        fprintf(stderr, "File opened error: %d\n", fd);
+        return 0;
     }
     uint32_t buf;
     ssize_t n = read(fd, &buf, sizeof(buf));
