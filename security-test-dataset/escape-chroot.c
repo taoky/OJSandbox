@@ -7,7 +7,6 @@
 #include <sys/types.h>
 
 #define MAX_DEPTH 32
-const char * const dirName = "test";
 
 int moveUp() {
     for (int i = 0; i < MAX_DEPTH; i++)
@@ -19,21 +18,12 @@ int moveUp() {
 int main() {
     int a, b;
     scanf("%d%d", &a, &b);
-
-    if (mkdir(dirName, 0700)) {
+    if (moveUp()) {
         printf("-1\n");
         return 0;
     }
-    if (chroot(dirName)) {
-        printf("-2\n");
-        return 0;
-    }
-    if (moveUp()) {
-        printf("-3\n");
-        return 0;
-    }
     if (chroot(".")) {
-        printf("-4\n");
+        printf("-2\n");
         return 0;
     }
 
