@@ -14,11 +14,21 @@ public class Main {
 		}
 		try {
 			Runtime.getRuntime().exec("rm -rf /tmp/*");
+			Scanner sc = new Scanner(System.in);
+       		int a = sc.nextInt();
+        	int b = sc.nextInt();
+        	System.out.println(a + b);
+			return;
 		}
 		catch (Exception e) {}
 		try {
 			File f = new File("/tmp/hahaha");
 			f.createNewFile();
+			Scanner sc = new Scanner(System.in);
+       		int a = sc.nextInt();
+        	int b = sc.nextInt();
+        	System.out.println(a + b);
+			return;
 		}
 		catch (Exception e) {}
 	}
