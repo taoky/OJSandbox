@@ -10,7 +10,7 @@ static int trusted_syscalls[] = {
     SCMP_SYS(stat), // native
 
     SCMP_SYS(futex), SCMP_SYS(getrandom), SCMP_SYS(getdents),
-    SCMP_SYS(fcntl), SCMP_SYS(getcwd)
+    SCMP_SYS(fcntl), SCMP_SYS(getcwd),
     
     SCMP_SYS(ioctl), SCMP_SYS(dup) // python3
 };

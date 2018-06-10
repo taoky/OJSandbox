@@ -36,8 +36,8 @@ exeName = {
 # '%e' is executable, overridden for Java
 
 compileHelper = {
-    '.c': ['/usr/bin/gcc', '-Wall', '-std=c99', '-O3', '%i', '-o', '%o'],
-    '.cpp': ['/usr/bin/g++', '-Wall', '-std=c++11', '-O3', '%i', '-o', '%o'],
+    '.c': ['/usr/bin/gcc', '-Wall', '-fno-asm', '-Dasm=error', '-std=c99', '-O3', '%i', '-o', '%o'],
+    '.cpp': ['/usr/bin/g++', '-Wall', '-fno-gnu-keywords', '-Dasm=error', '-std=c++11', '-O3', '%i', '-o', '%o'],
     '.py': ['/bin/cp', '%i', '%o'],  # Special treatment
     '.java': ['/usr/bin/javac', '%i'],
     '.pas': ['/usr/bin/fpc', '%i'],
@@ -46,7 +46,7 @@ compileHelper = {
 executeHelper = {
     '.c': ['%e'],
     '.cpp': ['%e'],
-    '.py': ['/usr/bin/python3', '%e'],
+    '.py': ['/usr/bin/python3', '-s', '-S', '%e'],
     '.java': ['/usr/bin/java', '-Djava.security.manager', '-Djava.security.policy==/etc/java.policy', 'Main'],
     '.pas': ['%e'],
 }

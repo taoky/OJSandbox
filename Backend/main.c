@@ -266,7 +266,7 @@ void killChild(int sig)
         memLimKilled = true;
 }
 
-void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t maxFileSize, rlim_t maxStackSize)
+void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t maxFileSize, rlim_t maxStackSize, rlim_t maxFileDes)
 {
     /* The unit of some arguments:
 	 * maxMemory (MiB)
@@ -283,7 +283,7 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     {
         maxStackSize *= (1 << 20);
     }
-    struct rlimit max_memory, max_cpu_time, max_process_num, max_file_size, max_stack, nocore;
+    struct rlimit max_memory, max_cpu_time, max_process_num, max_file_size, max_stack, nocore, max_fd;
     if (maxMemory != 0)
     {
         setrlimStruct(maxMemory, &max_memory);
@@ -302,6 +302,10 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
         setrlimStruct(maxStackSize, &max_stack);
     }
     setrlimStruct(0, &nocore);
+    if (maxFileDes != 0)
+    {
+        setrlimStruct(maxFileDes, &max_fd);
+    }
 
     if (maxMemory != 0)
     {
@@ -340,6 +344,13 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     {
         errorExit(RLERR);
     }
+	if (maxFileDes != 0)
+    {
+        if (setrlimit(RLIMIT_NOFILE, &max_fd) != 0)
+		{
+			errorExit(RLERR);
+		}
+	}
 }
 
 void fileRedirect(const char *inputpath, const char *outputpath)
@@ -418,7 +429,7 @@ int main(int argc, char **argv)
                  runArgs.timeLimit == 0 ? 0 : (int)(runArgs.timeLimit / 1000.0 + 1),
                  runArgs.isMultiProcess ? maxProcesses : 1,
                  maxOutputFile,
-                 0); // rough time & memory limit
+                 0, 32); // rough time & memory limit
         // redirect stdin & stdout
         fileRedirect(runArgs.inputFileName, runArgs.outputFileName);
 

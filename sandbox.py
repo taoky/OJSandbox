@@ -50,6 +50,7 @@ def judgeSingleTest(program, codeType, infile, outfile, runSettings={}, **config
     if rp in forwardResults:
         file.safeRemove(file.getRunDir() + inRedir)
         file.safeRemove(file.getRunDir() + outRedir)
+        file.cleanupRunDir()
         return JudgeResult(rp, runInfo)
     copy(file.getRunDir() + outRedir, os.getcwd())
 
