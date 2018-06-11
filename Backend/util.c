@@ -74,6 +74,7 @@ int copyFile(const char *from, const char *to) {
 	fd_in = open(from, O_RDONLY);
 	if (fd_in == -1) {
 		perror(FIERR);
+		log("in copyFile(), fd_in == -1, from == \"%s\"\n", from);
 		return -1;
 	}
 	if (fstat(fd_in, &st) == -1) {
@@ -83,6 +84,7 @@ int copyFile(const char *from, const char *to) {
 	fd_out = open(to, O_CREAT | O_WRONLY | O_TRUNC, st.st_mode);
 	if (fd_out == -1) {
 		perror(FIERR);
+		log("in copyFile(), fd_out == -1, to == \"%s\"\n", to);
 		return -1;
 	}
 	if (sendfile(fd_out, fd_in, &offset, st.st_size) == -1) {

@@ -34,7 +34,7 @@ struct runArgs_t
     bool isLimitVM;          // --enable-vm-limit
 } runArgs;
 
-static const char * const optString = "+c:e:i:o:E:t:m:l:hv?";
+static const char *const optString = "+c:e:i:o:E:t:m:l:hv?";
 
 static const struct option longOpts[] = {
     {"chroot-dir", required_argument, NULL, 'c'},
@@ -60,7 +60,7 @@ static const struct option longOpts[] = {
 void display_version(const char *a0)
 {
     // Strip everything before the last slash to get the base name
-    const char * pname = a0 + strlen(a0);
+    const char *pname = a0 + strlen(a0);
     for (int i = strlen(a0); i > 0; i--)
     {
         if (*--pname == '/')
@@ -76,42 +76,42 @@ void display_version(const char *a0)
 void display_help(const char *a0)
 {
     log(TITLE "\n\n"
-        "Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [-E file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h|-v] [--exec-command] [-- PROG [ARGS]]\n"
-        "       %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help|--version] [--exec-command] [-- PROG [ARGS]]\n"
-        "  -c  --chroot-dir     The directory that will be chroot(2)ed in.\n"
-        "  -e  --exec-file      The program (or source file) that will be executed or\n"
-        "                       interpreted.\n"
-        "      --exec-command   Enable the function to run command after '--'.\n"
-        "  -i  --input          The file that will be the input source.\n"
-        "  -o  --output         The file that will be the output (stdout) of the\n"
-        "                       program.\n"
-        "  -l  --log            (Optional, stderr by default) The file that will be the\n"
-        "                       output (stderr) of the sandbox and program.\n"
-        "  -t  --time-limit     (Optional, unlimited by default) The time (ms) limit of\n"
-        "                       the program.\n"
-        "  -m  --mem-limit      (Optional, unlimited by default) The memory size (MiB)\n"
-        "                       limit of the program.\n"
-        "      --disable-seccomp\n"
-        "                       (Optional) This will disable secure computing mode,\n"
-        "                       the system call filter.\n"
-        "      --copy-back      (Optional, usually required when compiling)\n"
-        "                       The following argument will be copied back to the\n"
-        "                       working directory.\n"
-        "      --allow-multi-process\n"
-        "                       (Optional) Allow up to 128 processes to run.\n"
-        "  -E  --exec-stderr    (Optional) This file will be the output (stderr) of the\n"
-        "                       executed program.\n"
-        "      --enable-vm-limit\n"
-        "                       (Optional) Limit VM (Virtual Memory) only, if\n"
-        "                       --mem-limit is on.\n"
-        "      --max-processes  (Optional, 128 by default) Max process number of the\n"
-        "                       unprivileged user (ojs). You must use --allow-multi-process\n"
-        "      --output-file-size\n"
-        "                       (Optional, 16MiB by default) Max output file size.\n"
-        "\n"
-        "  -h  --help           Show this help message and quit.\n"
-        "  -v  --version        Show version information and quit.\n",
-		a0, a0);
+              "Usage: %s -c path -e file -i file -o file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [-E file] [-l file] [-t num] [-m num] [--mem-rss-only] [-h|-v] [--exec-command] [-- PROG [ARGS]]\n"
+              "       %s --chroot-dir path --exec-file file --input file --output file [--disable-seccomp] [--allow-multi-process] [--copy-back file] [--exec-stderr file] [--log file] [--time-limit num] [--mem-limit num] [--mem-rss-only] [--help|--version] [--exec-command] [-- PROG [ARGS]]\n"
+              "  -c  --chroot-dir     The directory that will be chroot(2)ed in.\n"
+              "  -e  --exec-file      The program (or source file) that will be executed or\n"
+              "                       interpreted.\n"
+              "      --exec-command   Enable the function to run command after '--'.\n"
+              "  -i  --input          The file that will be the input source.\n"
+              "  -o  --output         The file that will be the output (stdout) of the\n"
+              "                       program.\n"
+              "  -l  --log            (Optional, stderr by default) The file that will be the\n"
+              "                       output (stderr) of the sandbox and program.\n"
+              "  -t  --time-limit     (Optional, unlimited by default) The time (ms) limit of\n"
+              "                       the program.\n"
+              "  -m  --mem-limit      (Optional, unlimited by default) The memory size (MiB)\n"
+              "                       limit of the program.\n"
+              "      --disable-seccomp\n"
+              "                       (Optional) This will disable secure computing mode,\n"
+              "                       the system call filter.\n"
+              "      --copy-back      (Optional, usually required when compiling)\n"
+              "                       The following argument will be copied back to the\n"
+              "                       working directory.\n"
+              "      --allow-multi-process\n"
+              "                       (Optional) Allow up to 128 processes to run.\n"
+              "  -E  --exec-stderr    (Optional) This file will be the output (stderr) of the\n"
+              "                       executed program.\n"
+              "      --enable-vm-limit\n"
+              "                       (Optional) Limit VM (Virtual Memory) only, if\n"
+              "                       --mem-limit is on.\n"
+              "      --max-processes  (Optional, 128 by default) Max process number of the\n"
+              "                       unprivileged user (ojs). You must use --allow-multi-process\n"
+              "      --output-file-size\n"
+              "                       (Optional, 16MiB by default) Max output file size.\n"
+              "\n"
+              "  -h  --help           Show this help message and quit.\n"
+              "  -v  --version        Show version information and quit.\n",
+        a0, a0);
     exit(0);
 }
 
@@ -195,7 +195,7 @@ void option_handle(int argc, char **argv)
             }
             if (strcmp("enable-vm-limit", longOpts[longIndex].name) == 0)
             {
-				runArgs.isLimitVM = true;
+                runArgs.isLimitVM = true;
             }
             if (strcmp("max-processes", longOpts[longIndex].name) == 0)
             {
@@ -207,7 +207,6 @@ void option_handle(int argc, char **argv)
                     exit(-1);
                 }
                 maxProcesses = val;
-
             }
             if (strcmp("output-file-size", longOpts[longIndex].name) == 0)
             {
@@ -344,13 +343,13 @@ void setLimit(rlim_t maxMemory, rlim_t maxCPUTime, rlim_t maxProcessNum, rlim_t 
     {
         errorExit(RLERR);
     }
-	if (maxFileDes != 0)
+    if (maxFileDes != 0)
     {
         if (setrlimit(RLIMIT_NOFILE, &max_fd) != 0)
-		{
-			errorExit(RLERR);
-		}
-	}
+        {
+            errorExit(RLERR);
+        }
+    }
 }
 
 void fileRedirect(const char *inputpath, const char *outputpath)
@@ -378,7 +377,7 @@ void logRedirect(const char *logpath)
     if (logpath != NULL)
     {
         FILE *log_file = fopen(logpath, "w");
-        if (log_file == NULL) 
+        if (log_file == NULL)
         {
             errorExit(FIERR);
         }
@@ -400,10 +399,6 @@ int main(int argc, char **argv)
     logRedirect(runArgs.logFileName);
     signal(SIGUSR1, ready);
 
-/*     char *current_dir = get_current_dir_name();
-    log("%s\n", current_dir);
-    free(current_dir); */
-
     char *execFileBaseName = basename(runArgs.execFileName);
     // 1. copy prog
     char *chrootTmp = pathCat(runArgs.chrootDir, "tmp");
@@ -424,7 +419,7 @@ int main(int argc, char **argv)
         // child
 
         // set rlimit
-		// runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)
+        // runArgs.memLimit == 0 || runArgs.isMemLimitRSS ? 0 : (runArgs.memLimit * 1.5)
         setLimit(runArgs.memLimit == 0 || !runArgs.isLimitVM ? 0 : (runArgs.memLimit * 1.5),
                  runArgs.timeLimit == 0 ? 0 : (int)(runArgs.timeLimit / 1000.0 + 1),
                  runArgs.isMultiProcess ? maxProcesses : 1,
@@ -435,13 +430,13 @@ int main(int argc, char **argv)
 
         logRedirect(runArgs.execStderr);
         // chroot
-		int chResult = 0;
+        int chResult = 0;
         chResult |= chroot(runArgs.chrootDir);
         chResult |= chdir("/tmp");
-		if (chResult != 0)
-		{
-			errorExit(CHERR);
-		}
+        if (chResult != 0)
+        {
+            errorExit(CHERR);
+        }
         // set uid & gid to nobody
         setNonPrivilegeUser();
 
@@ -468,7 +463,7 @@ int main(int argc, char **argv)
     {
         // parent
         char procStat[13 + 10] = {};
-        snprintf(procStat, sizeof(procStat),  "/proc/%d/statm", son);
+        snprintf(procStat, sizeof(procStat), "/proc/%d/statm", son);
         // set timer
         signal(SIGALRM, killChild);
         struct itimerval itval;
@@ -498,20 +493,20 @@ int main(int argc, char **argv)
             {
                 // prevent segfault
                 if (fscanf(procFile, "%*u %lu", &memory_now) < 1)
-				{
-					memory_now = 0;
-				}
+                {
+                    memory_now = 0;
+                }
                 fclose(procFile);
             }
-			memory_now *= pagesize / (1 << 10);
-			if (memory_now > memory_max)
-			{
-				memory_max = memory_now;
-				if (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 10))
-				{
-					killChild(SIGUSR1);
-				}
-			}
+            memory_now *= pagesize / (1 << 10);
+            if (memory_now > memory_max)
+            {
+                memory_max = memory_now;
+                if (runArgs.memLimit != 0 && memory_max > runArgs.memLimit * (1 << 10))
+                {
+                    killChild(SIGUSR1);
+                }
+            }
         }
         int cpuTime = timevalms(&sonUsage.ru_utime) + timevalms(&sonUsage.ru_stime);
         // long maxrss = sonUsage.ru_maxrss;
@@ -519,14 +514,7 @@ int main(int argc, char **argv)
         timersub(&progEnd, &progStart, &useTime);
         int actualTime = timevalms(&useTime);
         remove(copyprogTo);
-        if (runArgs.copyBackFileName != NULL)
-        {
-            char *copyFrom = pathCat(chrootTmp, runArgs.copyBackFileName);
-            // copyto TODO
-            copyFile(copyFrom, runArgs.copyBackFileName);
-            remove(copyFrom);
-            free(copyFrom);
-        }
+
         itval.it_value.tv_sec = itval.it_value.tv_usec = 0; // stop timer
         if (WIFEXITED(status))
         {
@@ -534,6 +522,14 @@ int main(int argc, char **argv)
             if (ret == 0)
             {
                 puts(RES_OK);
+                if (runArgs.copyBackFileName != NULL)
+                {
+                    char *copyFrom = pathCat(chrootTmp, runArgs.copyBackFileName);
+                    // copyto TODO
+                    copyFile(copyFrom, runArgs.copyBackFileName);
+                    remove(copyFrom);
+                    free(copyFrom);
+                }
             }
             else
             {

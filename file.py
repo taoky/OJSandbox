@@ -1,6 +1,7 @@
 import os
 import subprocess as sub
 import json
+import shutil
 from debug import dprint
 
 dataDir = os.path.dirname(__file__) + '/'
@@ -73,7 +74,8 @@ def safeRemove(f):
         return False
 
 def cleanupRunDir():
-    os.system("find " + getRunDir() + " -delete >/dev/null 2>&1")
+    # os.system("find " + getRunDir() + " -delete >/dev/null 2>&1")
+    shutil.rmtree(getRunDir(), ignore_errors=True)
     return True
 
 def removeHiddenFiles(li):

@@ -22,6 +22,13 @@ def executeProgramBackend(command, **options):
 
     dprint("\x1B[1;36m=== Captured stdout ===\x1B[0m\n" + cp.stdout.rstrip())
     dprint("\x1B[1;35m=== Captured stderr ===\x1B[0m\n" + cp.stderr.rstrip())
+    try:
+        stderr_file = open(options["stderr"], "r")
+        if stderr_file != "/dev/null":
+            stderr_str = stderr_file.read()
+            dprint("\x1B[1;35m=== Captured stderr (in file) ===\x1B[0m\n" + stderr_str)
+    except KeyError: # no stderr file
+        pass
 
     try:
         stat = [int(i) for i in res[1].split(' ')]
