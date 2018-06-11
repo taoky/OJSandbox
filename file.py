@@ -69,12 +69,12 @@ def safeRemove(f):
     try:
         os.remove(f)
         return True
-    except FileNotFoundError:
+    except (FileNotFoundError, PermissionError, IsADirectoryError):
         return False
 
 def cleanupRunDir():
-    for f in os.listdir(getRunDir()):
-        safeRemove(getRunDir() + "/" + f)
+    os.system("find " + getRunDir() + " -delete >/dev/null 2>&1")
+    return True
 
 def removeHiddenFiles(li):
     return [i for i in li if not i.startswith('.')]
