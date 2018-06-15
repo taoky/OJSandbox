@@ -17,7 +17,7 @@ int main()
         // fprintf(stderr, "File successfully opened at %d\n", fd);
         scanf("%d%d", &a, &b);
         res = a + b;
-        printf("%d\n", a, b);
+        printf("%d\n", a + b);
     }
     else
     {
