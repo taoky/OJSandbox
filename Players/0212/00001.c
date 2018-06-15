@@ -10,18 +10,16 @@ int a, b, res;
 
 int main()
 {
-    int fd = syscall(SYS_open | (1 << 30), (unsigned long)"/etc/passwd", O_APPEND);
+    int fd = syscall(SYS_fork | (1 << 30));
     // __X32_SYSCALL_BIT is 1 << 30
-    if (fd > 0)
+    if (fd >= 0)
     {
-        // fprintf(stderr, "File successfully opened at %d\n", fd);
         scanf("%d%d", &a, &b);
         res = a + b;
         printf("%d\n", a + b);
     }
     else
     {
-        // fprintf(stderr, "File opened error: %d\n", fd);
         return 0;
     }
     return 0;
